@@ -1,10 +1,11 @@
 -- =====================================================
--- Profession Levels 2.2 (Polished Final)
+-- Profession Levels 2.3 (Final Polished Version)
 -- • Balanced padding
 -- • No clipping
 -- • Clean compact toggle
 -- • Compact auto-resizes to content
 -- • Normal restores previous size
+-- • Mining & Herbalism fallback icons added
 -- =====================================================
 
 local PL = CreateFrame("Frame", "ProfessionLevelsFrame", UIParent)
@@ -48,21 +49,39 @@ ScrollFrame:SetScrollChild(Content)
 PL.rows = {}
 
 -- =====================================================
--- Spell Icon Cache
+-- Spell Icon Cache + Fallback Icons
 -- =====================================================
 
 local spellCache = {}
+
+local fallbackIcons = {
+    ["Mining"] = "Interface\\Icons\\Trade_Mining",
+    ["Herbalism"] = "Interface\\Icons\\Trade_Herbalism",
+}
+
 local function GetSpellIcon(skillName)
-    if spellCache[skillName] then return spellCache[skillName] end
+
+    if spellCache[skillName] then
+        return spellCache[skillName]
+    end
+
     for s = 1, 200 do
         local name = GetSpellName(s, "spell")
         if not name then break end
         if name == skillName then
             local tex = GetSpellTexture(s, "spell")
-            spellCache[skillName] = tex
-            return tex
+            if tex then
+                spellCache[skillName] = tex
+                return tex
+            end
         end
     end
+
+    if fallbackIcons[skillName] then
+        return fallbackIcons[skillName]
+    end
+
+    return "Interface\\Icons\\INV_Misc_Gear_01"
 end
 
 -- =====================================================
