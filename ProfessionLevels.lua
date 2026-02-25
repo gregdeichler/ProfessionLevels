@@ -53,18 +53,40 @@ PL.rows = {}
 
 local spellCache = {}
 local function GetSpellIcon(skillName)
-    if spellCache[skillName] then return spellCache[skillName] end
+
+    -- Try spellbook lookup first
+    if spellCache[skillName] then
+        return spellCache[skillName]
+    end
+
     for s = 1, 200 do
         local name = GetSpellName(s, "spell")
         if not name then break end
         if name == skillName then
             local tex = GetSpellTexture(s, "spell")
-            spellCache[skillName] = tex
-            return tex
+            if tex then
+                spellCache[skillName] = tex
+                return tex
+            end
         end
     end
-end
 
+    -- Fallback icon if spell texture not found
+    if fallbackIcons[skillName] then
+        return fallbackIcons[skillName]
+    end
+
+    -- Final fallback (generic trade icon)
+    return "Interface\\Icons\\INV_Misc_Gear_01"
+end
+-- =====================================================
+-- Fallback Icons (for 1.12 / Turtle WoW quirks)
+-- =====================================================
+
+local fallbackIcons = {
+    ["Mining"] = "Interface\\Icons\\Trade_Mining",
+    ["Herbalism"] = "Interface\\Icons\\Trade_Herbalism",
+}
 -- =====================================================
 -- Row Creation
 -- =====================================================
@@ -277,3 +299,4 @@ PL:RegisterEvent("SKILL_LINES_CHANGED")
 PL:SetScript("OnEvent", function()
     UpdateProfessions()
 end)
+
