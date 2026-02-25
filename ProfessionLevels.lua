@@ -184,23 +184,6 @@ toggleMinimap:SetScript("OnClick", function()
     end
 end)
 
-local iconOptionsCount = 12
-
-local iconOptions = {
-    { text = "Engineering", value = "Trade_Engineering" },
-    { text = "Alchemy", value = "Trade_Alchemy" },
-    { text = "Blacksmithing", value = "Trade_BlackSmithing" },
-    { text = "Cooking", value = "INV_Misc_Food_15" },
-    { text = "Enchanting", value = "Trade_Engraving" },
-    { text = "First Aid", value = "INV_Drink_16" },
-    { text = "Fishing", value = "Trade_Fishing" },
-    { text = "Herbalism", value = "Trade_Herbalism" },
-    { text = "Leatherworking", value = "Trade_LeatherWorking" },
-    { text = "Mining", value = "Trade_Mining" },
-    { text = "Skinning", value = "INV_Misc_Pelt_Wolf_01" },
-    { text = "Tailoring", value = "Trade_Tailoring" },
-}
-
 -- =====================================================
 -- Minimap Button
 -- =====================================================
@@ -506,13 +489,6 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         toggleCompact:SetChecked(settings.compact)
         toggleLock:SetChecked(settings.locked)
         toggleMinimap:SetChecked(settings.showMinimap)
-        for i, opt in ipairs(iconOptions) do
-            if opt.value == settings.minimapIcon then
-                currentIconIndex = i
-                iconDisplay:SetText(opt.text)
-                break
-            end
-        end
         OptionsFrame:Show()
     elseif msg == "primary" then
         settings.showPrimary = true
