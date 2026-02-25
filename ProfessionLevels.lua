@@ -71,6 +71,8 @@ end
 
 local settings = GetCharSettings()
 
+local minimapBtn
+
 -- =====================================================
 -- Options Frame
 -- =====================================================
@@ -200,14 +202,6 @@ minimapIcon:SetWidth(22)
 minimapIcon:SetHeight(22)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
-
-local minimapBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
-minimapBorder:SetWidth(53)
-minimapBorder:SetHeight(53)
-minimapBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-minimapBorder:SetPoint("CENTER", 0, 0)
-
-minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 minimapBtn:SetScript("OnClick", function()
     if PL:IsVisible() then
