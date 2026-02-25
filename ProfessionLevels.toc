@@ -1,12 +1,13 @@
 ## Interface: 11200
 ## Title: Profession Levels
 ## Notes: Movable profession tracking frame.
-## Author: Greg
-## Version: 0.44 Beta
+## Author: gregdeichler
+## Version: 0.45 Beta
 ## SavedVariables: ProfessionLevelsDB
 
 
 ProfessionLevels.lua
+
 
 
 
