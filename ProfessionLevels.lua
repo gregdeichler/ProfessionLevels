@@ -71,126 +71,7 @@ end
 
 local settings = GetCharSettings()
 
--- =====================================================
--- Options Frame
--- =====================================================
-
-local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions")
-OptionsFrame:SetWidth(240)
-OptionsFrame:SetHeight(280)
-OptionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-OptionsFrame:SetFrameStrata("DIALOG")
-OptionsFrame:Hide()
-
-OptionsFrame:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile = true,
-    tileSize = 32,
-    edgeSize = 32,
-    insets = { left = 8, right = 8, top = 8, bottom = 8 }
-})
-
-local optionsTitle = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-optionsTitle:SetPoint("TOP", OptionsFrame, "TOP", 0, -12)
-optionsTitle:SetText("Preferences")
-
-local function CreateRadioButton(name, parent, label, yOffset)
-    local rb = CreateFrame("CheckButton", name, parent, "UIRadioButtonTemplate")
-    rb:SetPoint("TOPLEFT", 20, yOffset)
-    
-    local text = rb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    text:SetPoint("LEFT", rb, "RIGHT", 4, 0)
-    text:SetText(label)
-    
-    return rb
-end
-
-local radioBoth = CreateRadioButton("PLRadioBoth", OptionsFrame, "Show Both", -35)
-local radioPrimary = CreateRadioButton("PLRadioPrimary", OptionsFrame, "Primary Only", -55)
-local radioSecondary = CreateRadioButton("PLRadioSecondary", OptionsFrame, "Secondary Only", -75)
-
-local selectedMode = 1
-
-local function UpdateRadioSelection()
-    radioBoth:SetChecked(selectedMode == 1)
-    radioPrimary:SetChecked(selectedMode == 2)
-    radioSecondary:SetChecked(selectedMode == 3)
-end
-
-radioBoth:SetScript("OnClick", function()
-    selectedMode = 1
-    settings.showPrimary = true
-    settings.showSecondary = true
-    UpdateRadioSelection()
-    UpdateProfessions()
-end)
-
-radioPrimary:SetScript("OnClick", function()
-    selectedMode = 2
-    settings.showPrimary = true
-    settings.showSecondary = false
-    UpdateRadioSelection()
-    UpdateProfessions()
-end)
-
-radioSecondary:SetScript("OnClick", function()
-    selectedMode = 3
-    settings.showPrimary = false
-    settings.showSecondary = true
-    UpdateRadioSelection()
-    UpdateProfessions()
-end)
-
-local closeBtn = CreateFrame("Button", nil, OptionsFrame, "UIPanelCloseButton")
-closeBtn:SetPoint("TOPRIGHT", OptionsFrame, "TOPRIGHT", -4, -4)
-closeBtn:SetScript("OnClick", function()
-    OptionsFrame:Hide()
-end)
-
-local toggleCompact = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleCompact:SetPoint("TOPLEFT", 20, -105)
-toggleCompact.text = toggleCompact:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-toggleCompact.text:SetPoint("LEFT", toggleCompact, "RIGHT", 4, 0)
-toggleCompact.text:SetText("Compact Mode")
-toggleCompact:SetChecked(settings.compact)
-toggleCompact:SetScript("OnClick", function()
-    settings.compact = toggleCompact:GetChecked()
-    UpdateProfessions()
-end)
-
-local toggleLock = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleLock:SetPoint("TOPLEFT", 20, -130)
-toggleLock.text = toggleLock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-toggleLock.text:SetPoint("LEFT", toggleLock, "RIGHT", 4, 0)
-toggleLock.text:SetText("Lock Frame")
-toggleLock:SetChecked(settings.locked)
-toggleLock:SetScript("OnClick", function()
-    settings.locked = toggleLock:GetChecked()
-end)
-
-local toggleMinimap = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleMinimap:SetPoint("TOPLEFT", 20, -155)
-toggleMinimap.text = toggleMinimap:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-toggleMinimap.text:SetPoint("LEFT", toggleMinimap, "RIGHT", 4, 0)
-toggleMinimap.text:SetText("Show Minimap Button")
-toggleMinimap:SetChecked(settings.showMinimap)
-toggleMinimap:SetScript("OnClick", function()
-    settings.showMinimap = toggleMinimap:GetChecked()
-    if settings.showMinimap then
-        minimapBtn:Show()
-    else
-        minimapBtn:Hide()
-    end
-end)
-
-local iconLabel = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-iconLabel:SetPoint("TOPLEFT", 20, -180)
-iconLabel:SetText("Minimap Icon:")
-
-local iconDropdown = CreateFrame("Frame", "PLIconDropdown", OptionsFrame, "UIDropDownMenuTemplate")
-iconDropdown:SetPoint("TOPLEFT", 20, -200)
-iconDropdown:SetWidth(180)
+local currentIcon = settings.minimapIcon or "Trade_Engineering"
 
 local iconOptions = {
     { text = "Engineering", value = "Trade_Engineering" },
@@ -208,24 +89,31 @@ local iconOptions = {
 }
 
 local function UpdateIconDropdown()
-    UIDropDownMenu_SetSelectedValue(iconDropdown, settings.minimapIcon or "Trade_Engineering")
+    UIDropDownMenu_SetText(iconDropdown, iconOptions[1].text)
+    for _, opt in ipairs(iconOptions) do
+        if opt.value == currentIcon then
+            UIDropDownMenu_SetText(iconDropdown, opt.text)
+            break
+        end
+    end
 end
 
 UIDropDownMenu_Initialize(iconDropdown, function()
     for _, option in ipairs(iconOptions) do
         local info = UIDropDownMenu_CreateInfo()
         info.text = option.text
-        info.value = option.value
+        info.checked = (option.value == currentIcon)
         info.func = function()
+            currentIcon = option.value
             settings.minimapIcon = option.value
             minimapIcon:SetTexture("Interface\\Icons\\" .. option.value)
-            UIDropDownMenu_SetSelectedValue(iconDropdown, option.value)
+            UIDropDownMenu_SetText(iconDropdown, option.text)
         end
         UIDropDownMenu_AddButton(info)
     end
 end)
 
-UIDropDownMenu_SetSelectedValue(iconDropdown, settings.minimapIcon or "Trade_Engineering")
+UIDropDownMenu_SetText(iconDropdown, "Engineering")
 
 -- =====================================================
 -- Minimap Button
@@ -239,17 +127,11 @@ minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimapBtn:RegisterForDrag("LeftButton")
 
-local minimapIcon = minimapBtn:CreateTexture(nil, "BACKGROUND")
-minimapIcon:SetWidth(20)
-minimapIcon:SetHeight(20)
+local minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
+minimapIcon:SetWidth(22)
+minimapIcon:SetHeight(22)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
-
-local minimapBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
-minimapBorder:SetWidth(53)
-minimapBorder:SetHeight(53)
-minimapBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-minimapBorder:SetPoint("CENTER", 0, 0)
 
 minimapBtn:SetScript("OnClick", function(self, button)
     if button == "LeftButton" then
@@ -529,6 +411,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         toggleCompact:SetChecked(settings.compact)
         toggleLock:SetChecked(settings.locked)
         toggleMinimap:SetChecked(settings.showMinimap)
+        currentIcon = settings.minimapIcon or "Trade_Engineering"
         UpdateIconDropdown()
         OptionsFrame:Show()
     elseif msg == "primary" then
@@ -564,7 +447,8 @@ PL:SetScript("OnEvent", function()
         else
             minimapBtn:Hide()
         end
-        minimapIcon:SetTexture("Interface\\Icons\\" .. (settings.minimapIcon or "Trade_Engineering"))
+        currentIcon = settings.minimapIcon or "Trade_Engineering"
+        minimapIcon:SetTexture("Interface\\Icons\\" .. currentIcon)
     end
     UpdateProfessions()
 end)
