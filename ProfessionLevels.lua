@@ -205,7 +205,7 @@ local minimapBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
 minimapBorder:SetWidth(53)
 minimapBorder:SetHeight(53)
 minimapBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-minimapBorder:SetPoint("TOPLEFT")
+minimapBorder:SetPoint("CENTER", 0, 0)
 
 minimapBtn:SetScript("OnClick", function(self, button)
     if button == "LeftButton" then
