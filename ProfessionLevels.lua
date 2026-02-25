@@ -198,10 +198,12 @@ minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 local minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
-minimapIcon:SetWidth(18)
-minimapIcon:SetHeight(18)
+minimapIcon:SetWidth(20)
+minimapIcon:SetHeight(20)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
+
+minimapBtn.icon = minimapIcon
 
 minimapBtn:SetScript("OnClick", function(self, button)
     if IsShiftKeyDown() then
