@@ -179,12 +179,10 @@ toggleMinimap.text:SetText("Show Minimap Button")
 toggleMinimap:SetChecked(settings.showMinimap)
 toggleMinimap:SetScript("OnClick", function()
     settings.showMinimap = toggleMinimap:GetChecked()
-    if minimapBtn then
-        if settings.showMinimap then
-            minimapBtn:Show()
-        else
-            minimapBtn:Hide()
-        end
+    if settings.showMinimap then
+        minimapBtn:Show()
+    else
+        minimapBtn:Hide()
     end
 end)
 
@@ -205,15 +203,7 @@ minimapIcon:SetHeight(22)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
 
-minimapBtn:SetScript("OnClick", function()
-    if PL:IsVisible() then
-        PL:Hide()
-    else
-        PL:Show()
-    end
-end)
-
-minimapBtn:SetScript("OnMouseDown", function(self, button)
+minimapBtn:SetScript("OnClick", function(self, button)
     if button == "RightButton" then
         if settings.showPrimary and settings.showSecondary then
             selectedMode = 1
@@ -226,6 +216,12 @@ minimapBtn:SetScript("OnMouseDown", function(self, button)
         toggleCompact:SetChecked(settings.compact)
         toggleLock:SetChecked(settings.locked)
         OptionsFrame:Show()
+    else
+        if PL:IsVisible() then
+            PL:Hide()
+        else
+            PL:Show()
+        end
     end
 end)
 
@@ -524,3 +520,5 @@ PL:SetScript("OnEvent", function()
     end
     UpdateProfessions()
 end)
+
+PL:Show()
