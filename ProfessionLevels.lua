@@ -48,10 +48,10 @@ local settings = GetCharSettings()
 -- Options Frame
 -- =====================================================
 
-local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions", PL)
-OptionsFrame:SetWidth(280)
-OptionsFrame:SetHeight(180)
-OptionsFrame:SetPoint("TOPLEFT", PL, "TOPRIGHT", 5, 0)
+local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions")
+OptionsFrame:SetWidth(240)
+OptionsFrame:SetHeight(170)
+OptionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 OptionsFrame:SetFrameStrata("DIALOG")
 OptionsFrame:Hide()
 
@@ -65,50 +65,55 @@ OptionsFrame:SetBackdrop({
 })
 
 local optionsTitle = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-optionsTitle:SetPoint("TOP", OptionsFrame, "TOP", 0, -10)
+optionsTitle:SetPoint("TOP", OptionsFrame, "TOP", 0, -12)
 optionsTitle:SetText("Preferences")
 
-local function CreateRadioButton(parent, label, index, yOffset)
-    local rb = CreateFrame("CheckButton", nil, parent, "UIRadioButtonTemplate")
+local function CreateRadioButton(name, parent, label, yOffset)
+    local rb = CreateFrame("CheckButton", name, parent, "UIRadioButtonTemplate")
     rb:SetPoint("TOPLEFT", 20, yOffset)
     
     local text = rb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     text:SetPoint("LEFT", rb, "RIGHT", 4, 0)
     text:SetText(label)
     
-    rb:SetScript("OnClick", function()
-        for i = 1, 3 do
-            _G[parent:GetName() .. "Radio" .. i]:SetChecked(i == index)
-        end
-        if index == 1 then
-            settings.showPrimary = true
-            settings.showSecondary = true
-        elseif index == 2 then
-            settings.showPrimary = true
-            settings.showSecondary = false
-        elseif index == 3 then
-            settings.showPrimary = false
-            settings.showSecondary = true
-        end
-        UpdateProfessions()
-    end)
-    
     return rb
 end
 
-local rb1 = CreateRadioButton(OptionsFrame, "Show Both", 1, -35)
-local rb2 = CreateRadioButton(OptionsFrame, "Primary Only", 2, -60)
-local rb3 = CreateRadioButton(OptionsFrame, "Secondary Only", 3, -85)
+local radioBoth = CreateRadioButton("PLRadioBoth", OptionsFrame, "Show Both", -35)
+local radioPrimary = CreateRadioButton("PLRadioPrimary", OptionsFrame, "Primary Only", -55)
+local radioSecondary = CreateRadioButton("PLRadioSecondary", OptionsFrame, "Secondary Only", -75)
 
-local function UpdateRadioButtons()
-    if settings.showPrimary and settings.showSecondary then
-        rb1:SetChecked(true)
-    elseif settings.showPrimary then
-        rb2:SetChecked(true)
-    else
-        rb3:SetChecked(true)
-    end
+local selectedMode = 1
+
+local function UpdateRadioSelection()
+    radioBoth:SetChecked(selectedMode == 1)
+    radioPrimary:SetChecked(selectedMode == 2)
+    radioSecondary:SetChecked(selectedMode == 3)
 end
+
+radioBoth:SetScript("OnClick", function()
+    selectedMode = 1
+    settings.showPrimary = true
+    settings.showSecondary = true
+    UpdateRadioSelection()
+    UpdateProfessions()
+end)
+
+radioPrimary:SetScript("OnClick", function()
+    selectedMode = 2
+    settings.showPrimary = true
+    settings.showSecondary = false
+    UpdateRadioSelection()
+    UpdateProfessions()
+end)
+
+radioSecondary:SetScript("OnClick", function()
+    selectedMode = 3
+    settings.showPrimary = false
+    settings.showSecondary = true
+    UpdateRadioSelection()
+    UpdateProfessions()
+end)
 
 local closeBtn = CreateFrame("Button", nil, OptionsFrame, "UIPanelCloseButton")
 closeBtn:SetPoint("TOPRIGHT", OptionsFrame, "TOPRIGHT", -4, -4)
@@ -117,7 +122,7 @@ closeBtn:SetScript("OnClick", function()
 end)
 
 local toggleCompact = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleCompact:SetPoint("TOPLEFT", 20, -115)
+toggleCompact:SetPoint("TOPLEFT", 20, -105)
 toggleCompact.text = toggleCompact:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 toggleCompact.text:SetPoint("LEFT", toggleCompact, "RIGHT", 4, 0)
 toggleCompact.text:SetText("Compact Mode")
@@ -128,48 +133,13 @@ toggleCompact:SetScript("OnClick", function()
 end)
 
 local toggleLock = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleLock:SetPoint("TOPLEFT", 20, -140)
+toggleLock:SetPoint("TOPLEFT", 20, -130)
 toggleLock.text = toggleLock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 toggleLock.text:SetPoint("LEFT", toggleLock, "RIGHT", 4, 0)
 toggleLock.text:SetText("Lock Frame")
 toggleLock:SetChecked(settings.locked)
 toggleLock:SetScript("OnClick", function()
     settings.locked = toggleLock:GetChecked()
-end)
-
--- =====================================================
--- Gear Button
--- =====================================================
-
-local gearBtn = CreateFrame("Button", nil, PL)
-gearBtn:SetWidth(20)
-gearBtn:SetHeight(20)
-gearBtn:SetPoint("TOPRIGHT", -6, -6)
-
-local gearTex = gearBtn:CreateTexture(nil, "BACKGROUND")
-gearTex:SetTexture("Interface\\BUTTONS\\UI-OptionsButton")
-gearTex:SetAllPoints()
-gearBtn:SetNormalTexture(gearTex)
-
-gearBtn:SetScript("OnClick", function()
-    if OptionsFrame:IsVisible() then
-        OptionsFrame:Hide()
-    else
-        UpdateRadioButtons()
-        toggleCompact:SetChecked(settings.compact)
-        toggleLock:SetChecked(settings.locked)
-        OptionsFrame:Show()
-    end
-end)
-
-gearBtn:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(gearBtn, "ANCHOR_TOPRIGHT")
-    GameTooltip:SetText("Preferences")
-    GameTooltip:Show()
-end)
-
-gearBtn:SetScript("OnLeave", function()
-    GameTooltip:Hide()
 end)
 
 -- =====================================================
@@ -285,7 +255,7 @@ local function SetupRowLayout(row, index)
         row.bar:SetHeight(barHeight)
         row.bar:ClearAllPoints()
         row.bar:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
-        bar = row.bar:SetPoint("RIGHT", row.value, "LEFT", -6, 0)
+        row.bar:SetPoint("RIGHT", row.value, "LEFT", -6, 0)
         row.bar:Show()
     end
 end
@@ -300,7 +270,7 @@ end
 -- Update Function
 -- =====================================================
 
-local function UpdateProfessions()
+function UpdateProfessions()
 
     ClearRows()
 
@@ -394,7 +364,14 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         UpdateProfessions()
     elseif msg == "config" or msg == "options" or msg == "settings" then
-        UpdateRadioButtons()
+        if settings.showPrimary and settings.showSecondary then
+            selectedMode = 1
+        elseif settings.showPrimary then
+            selectedMode = 2
+        else
+            selectedMode = 3
+        end
+        UpdateRadioSelection()
         toggleCompact:SetChecked(settings.compact)
         toggleLock:SetChecked(settings.locked)
         OptionsFrame:Show()
