@@ -1,7 +1,26 @@
 -- =====================================================
--- Profession Levels 2.4
--- • Per-character settings
--- • Preferences menu
+-- Profession Levels 2.5
+-- A profession tracking addon for Turtle WoW
+-- 
+-- Features:
+--   - Track profession levels across your characters
+--   - Monitor profession progress in real-time
+--   - Per-character settings (position, display preferences)
+--   - Primary/Secondary profession filtering
+--   - Compact and Normal display modes
+--
+-- Commands:
+--   /pl config   - Open preferences menu
+--   /pl compact - Switch to compact mode
+--   /pl normal  - Switch to normal mode
+--   /pl lock    - Lock frame position
+--   /pl unlock  - Unlock frame position
+--   /pl primary - Show primary professions only
+--   /pl secondary - Show secondary skills only
+--   /pl both    - Show both profession types
+--   /pl reset   - Reset all settings
+--
+-- Author: gregdeichler
 -- =====================================================
 
 local NORMAL_WIDTH = 330
