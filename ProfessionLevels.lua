@@ -1,10 +1,5 @@
 -- =====================================================
--- Profession Levels 2.5 (Stable Fixed Layout)
--- • No resizing
--- • Auto height based on professions
--- • Equal padding on all sides
--- • Compact spacing fixed
--- • Works correctly on Turtle / 1.12
+-- Profession Levels 2.6 (Turtle Stable Build)
 -- =====================================================
 
 local FRAME_WIDTH = 300
@@ -32,10 +27,6 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
-
--- =====================================================
--- Content Frame (explicit width so 1.12 doesn't collapse it)
--- =====================================================
 
 local Content = CreateFrame("Frame", nil, PL)
 Content:SetPoint("TOPLEFT", PADDING, -PADDING)
@@ -76,7 +67,7 @@ local function GetSpellIcon(skillName)
 end
 
 -- =====================================================
--- Row Creation
+-- Row Setup
 -- =====================================================
 
 local function CreateRow(index)
@@ -86,15 +77,13 @@ local function CreateRow(index)
     return row
 end
 
-local function SetupRowLayout(row, index)
+local function SetupRow(row, index, name, rank, maxRank)
 
     local compact = ProfessionLevelsDB.compact
     local rowHeight = compact and 16 or 26
     local rowSpacing = compact and ROW_SPACING_COMPACT or ROW_SPACING_NORMAL
 
     row:SetHeight(rowHeight)
-    row:SetWidth(Content:GetWidth())
-    row:ClearAllPoints()
     row:SetPoint("TOPLEFT", 0, -((index - 1) * rowSpacing))
 
     -- Icon
@@ -108,6 +97,7 @@ local function SetupRowLayout(row, index)
         row.icon:SetWidth(16)
         row.icon:SetHeight(16)
         row.icon:SetPoint("LEFT", 0, 0)
+        row.icon:SetTexture(GetSpellIcon(name))
         row.icon:Show()
     end
 
@@ -117,7 +107,6 @@ local function SetupRowLayout(row, index)
     end
 
     row.name:SetFontObject(compact and "GameFontHighlightSmall" or "GameFontNormal")
-    row.name:ClearAllPoints()
 
     if compact then
         row.name:SetPoint("LEFT", row, "LEFT", 0, 0)
@@ -125,19 +114,20 @@ local function SetupRowLayout(row, index)
         row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
     end
 
+    row.name:SetText(name)
+
     -- Value
     if not row.value then
         row.value = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     end
 
-    row.value:ClearAllPoints()
-
     if compact then
-        -- Tight spacing in compact
         row.value:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
     else
         row.value:SetPoint("RIGHT", row, "RIGHT", 0, 0)
     end
+
+    row.value:SetText(rank.."/"..maxRank)
 
     -- Bar
     if not row.bar then
@@ -152,11 +142,20 @@ local function SetupRowLayout(row, index)
         row.bar:Hide()
     else
         row.bar:SetHeight(12)
-        row.bar:ClearAllPoints()
         row.bar:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
         row.bar:SetPoint("RIGHT", row.value, "LEFT", -6, 0)
+        row.bar:SetMinMaxValues(0, maxRank)
+        row.bar:SetValue(rank)
         row.bar:Show()
+
+        if rank == maxRank then
+            row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
+        else
+            row.bar:SetStatusBarColor(0.9, 0.7, 0.1)
+        end
     end
+
+    row:Show()
 end
 
 local function ClearRows()
@@ -166,23 +165,16 @@ local function ClearRows()
 end
 
 -- =====================================================
--- Update Function
+-- Core Update
 -- =====================================================
 
-local function UpdateProfessions()
+local function BuildProfessionList()
 
     ClearRows()
 
     local index = 1
     local inSection = false
     local rowSpacing = ProfessionLevelsDB.compact and ROW_SPACING_COMPACT or ROW_SPACING_NORMAL
-
-    for i = 1, GetNumSkillLines() do
-        local name, isHeader, isExpanded = GetSkillLineInfo(i)
-        if isHeader and not isExpanded then
-            ExpandSkillHeader(i)
-        end
-    end
 
     for i = 1, GetNumSkillLines() do
         local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
@@ -193,36 +185,38 @@ local function UpdateProfessions()
             else
                 inSection = false
             end
-
         elseif inSection and rank and maxRank and maxRank > 0 then
 
             local row = PL.rows[index] or CreateRow(index)
-            SetupRowLayout(row, index)
-            row:Show()
-
-            row.name:SetText(name)
-            row.value:SetText(rank.."/"..maxRank)
-
-            if not ProfessionLevelsDB.compact then
-                row.icon:SetTexture(GetSpellIcon(name))
-                row.bar:SetMinMaxValues(0, maxRank)
-                row.bar:SetValue(rank)
-
-                if rank == maxRank then
-                    row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
-                else
-                    row.bar:SetStatusBarColor(0.9, 0.7, 0.1)
-                end
-            end
+            SetupRow(row, index, name, rank, maxRank)
 
             index = index + 1
         end
     end
 
     local totalHeight = ((index - 1) * rowSpacing) + (PADDING * 2)
-
     PL:SetHeight(totalHeight)
 end
+
+-- =====================================================
+-- Events
+-- =====================================================
+
+PL:RegisterEvent("PLAYER_LOGIN")
+PL:RegisterEvent("SKILL_LINES_CHANGED")
+
+PL:SetScript("OnEvent", function()
+
+    -- Expand headers first
+    for i = 1, GetNumSkillLines() do
+        local name, isHeader, isExpanded = GetSkillLineInfo(i)
+        if isHeader and not isExpanded then
+            ExpandSkillHeader(i)
+        end
+    end
+
+    BuildProfessionList()
+end)
 
 -- =====================================================
 -- Slash Commands
@@ -235,10 +229,10 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
 
     if msg == "compact" then
         ProfessionLevelsDB.compact = true
-        UpdateProfessions()
+        BuildProfessionList()
     elseif msg == "normal" then
         ProfessionLevelsDB.compact = false
-        UpdateProfessions()
+        BuildProfessionList()
     elseif msg == "lock" then
         ProfessionLevelsDB.locked = true
     elseif msg == "unlock" then
@@ -247,7 +241,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-        UpdateProfessions()
+        BuildProfessionList()
     end
 end
 
@@ -257,11 +251,4 @@ end)
 
 PL:SetScript("OnDragStop", function()
     this:StopMovingOrSizing()
-end)
-
-PL:RegisterEvent("PLAYER_LOGIN")
-PL:RegisterEvent("SKILL_LINES_CHANGED")
-
-PL:SetScript("OnEvent", function()
-    UpdateProfessions()
 end)
