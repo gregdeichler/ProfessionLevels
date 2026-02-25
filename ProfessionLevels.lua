@@ -1,8 +1,9 @@
 -- =====================================================
--- Profession Levels 3.0
--- Built From Stable 2.2 Base
+-- Profession Levels 3.0 (Safe Upgrade of 2.2)
 -- Adds:
---   Primary / Secondary filtering
+--   /pl primary
+--   /pl secondary
+--   /pl both
 --   Smart resize floor
 -- =====================================================
 
@@ -33,8 +34,8 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
-ProfessionLevelsDB.showPrimary = ProfessionLevelsDB.showPrimary ~= false
-ProfessionLevelsDB.showSecondary = ProfessionLevelsDB.showSecondary ~= false
+ProfessionLevelsDB.filter = ProfessionLevelsDB.filter or "both" 
+-- "both", "primary", "secondary"
 
 -- =====================================================
 -- Scroll Setup
@@ -119,7 +120,7 @@ local function ClearRows()
 end
 
 -- =====================================================
--- Update Function (Safe & Stable)
+-- Update Function (Based EXACTLY on 2.2)
 -- =====================================================
 
 local function UpdateProfessions()
@@ -130,7 +131,8 @@ local function UpdateProfessions()
     local index = 1
     local contentHeight = 0
     local rowSpacing = ProfessionLevelsDB.compact and 18 or 30
-    local currentSection = nil
+    local inSection = false
+    local currentHeader = nil
 
     -- Expand headers
     for i = 1, GetNumSkillLines() do
@@ -144,19 +146,28 @@ local function UpdateProfessions()
         local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
 
         if isHeader then
-            if name == "Professions" then
-                currentSection = "primary"
-            elseif name == "Secondary Skills" then
-                currentSection = "secondary"
+            if name == "Professions" or name == "Secondary Skills" then
+                inSection = true
+                currentHeader = name
             else
-                currentSection = nil
+                inSection = false
+                currentHeader = nil
             end
 
-        elseif currentSection and rank and maxRank and maxRank > 0 then
+        elseif inSection and rank and maxRank and maxRank > 0 then
 
-            if (currentSection == "primary" and ProfessionLevelsDB.showPrimary)
-            or (currentSection == "secondary" and ProfessionLevelsDB.showSecondary) then
+            -- Filtering without breaking detection
+            local allow = false
 
+            if ProfessionLevelsDB.filter == "both" then
+                allow = true
+            elseif ProfessionLevelsDB.filter == "primary" and currentHeader == "Professions" then
+                allow = true
+            elseif ProfessionLevelsDB.filter == "secondary" and currentHeader == "Secondary Skills" then
+                allow = true
+            end
+
+            if allow then
                 local row = PL.rows[index] or CreateRow(index)
                 row:Show()
 
@@ -189,7 +200,6 @@ local function UpdateProfessions()
 
     Content:SetHeight(math.max(contentHeight, ScrollFrame:GetHeight()))
 
-    -- Smart resize floor
     local minHeight = contentHeight + 40
     if PL:GetHeight() < minHeight then
         PL:SetHeight(minHeight)
@@ -207,48 +217,37 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     local msg = string.lower(arg or "")
 
     if msg == "primary" then
-        ProfessionLevelsDB.showPrimary = true
-        ProfessionLevelsDB.showSecondary = false
+        ProfessionLevelsDB.filter = "primary"
         UpdateProfessions()
-
     elseif msg == "secondary" then
-        ProfessionLevelsDB.showPrimary = false
-        ProfessionLevelsDB.showSecondary = true
+        ProfessionLevelsDB.filter = "secondary"
         UpdateProfessions()
-
     elseif msg == "both" then
-        ProfessionLevelsDB.showPrimary = true
-        ProfessionLevelsDB.showSecondary = true
+        ProfessionLevelsDB.filter = "both"
         UpdateProfessions()
-
     elseif msg == "compact" then
         ProfessionLevelsDB.compact = true
         UpdateProfessions()
-
     elseif msg == "normal" then
         ProfessionLevelsDB.compact = false
         UpdateProfessions()
-
     elseif msg == "lock" then
         ProfessionLevelsDB.locked = true
-
     elseif msg == "unlock" then
         ProfessionLevelsDB.locked = false
-
     elseif msg == "reset" then
+        ProfessionLevelsDB.filter = "both"
+        ProfessionLevelsDB.compact = false
+        ProfessionLevelsDB.locked = false
         PL:SetWidth(300)
         PL:SetHeight(180)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-        ProfessionLevelsDB.showPrimary = true
-        ProfessionLevelsDB.showSecondary = true
-        ProfessionLevelsDB.compact = false
-        ProfessionLevelsDB.locked = false
         UpdateProfessions()
     end
 end
 
 -- =====================================================
--- Drag & Resize
+-- Drag & Resize (Unchanged)
 -- =====================================================
 
 PL:SetScript("OnDragStart", function()
