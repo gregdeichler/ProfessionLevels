@@ -1,11 +1,9 @@
 ## Interface: 11200
 ## Title: Profession Levels
-## Notes: Movable profession tracking frame.
+## Notes: A profession tracking addon for Turtle WoW with per-character settings and display preferences.
 ## Author: gregdeichler
-## Version: 0.51 Beta
+## Version: 2.5
 ## SavedVariables: ProfessionLevelsDB
 
 
 ProfessionLevels.lua
-
-
