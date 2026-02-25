@@ -191,7 +191,7 @@ local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
 minimapBtn:SetWidth(31)
 minimapBtn:SetHeight(31)
 minimapBtn:SetFrameStrata("MEDIUM")
-minimapBtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 52 - (80 * cos(45)), (80 * sin(45)) - 52)
+minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimapBtn:RegisterForDrag("LeftButton")
 
