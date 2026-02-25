@@ -8,6 +8,7 @@
 --   - Per-character settings (position, display preferences)
 --   - Primary/Secondary profession filtering
 --   - Compact and Normal display modes
+--   - Minimap button for quick access
 --
 -- Commands:
 --   /pl config   - Open preferences menu
@@ -19,6 +20,11 @@
 --   /pl secondary - Show secondary skills only
 --   /pl both    - Show both profession types
 --   /pl reset   - Reset all settings
+--
+-- Minimap Button:
+--   Left Click:  Toggle main frame
+--   Right Click: Open settings
+--   Drag:       Reposition button
 --
 -- Author: gregdeichler
 -- =====================================================
@@ -56,6 +62,7 @@ local function GetCharSettings()
             compact = false,
             showPrimary = true,
             showSecondary = true,
+            showMinimap = true,
         }
     end
     return ProfessionLevelsDB[charKey]
@@ -69,7 +76,7 @@ local settings = GetCharSettings()
 
 local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions")
 OptionsFrame:SetWidth(240)
-OptionsFrame:SetHeight(170)
+OptionsFrame:SetHeight(195)
 OptionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 OptionsFrame:SetFrameStrata("DIALOG")
 OptionsFrame:Hide()
@@ -159,6 +166,87 @@ toggleLock.text:SetText("Lock Frame")
 toggleLock:SetChecked(settings.locked)
 toggleLock:SetScript("OnClick", function()
     settings.locked = toggleLock:GetChecked()
+end)
+
+local toggleMinimap = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+toggleMinimap:SetPoint("TOPLEFT", 20, -155)
+toggleMinimap.text = toggleMinimap:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+toggleMinimap.text:SetPoint("LEFT", toggleMinimap, "RIGHT", 4, 0)
+toggleMinimap.text:SetText("Show Minimap Button")
+toggleMinimap:SetChecked(settings.showMinimap)
+toggleMinimap:SetScript("OnClick", function()
+    settings.showMinimap = toggleMinimap:GetChecked()
+    if settings.showMinimap then
+        minimapBtn:Show()
+    else
+        minimapBtn:Hide()
+    end
+end)
+
+-- =====================================================
+-- Minimap Button
+-- =====================================================
+
+local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
+minimapBtn:SetWidth(31)
+minimapBtn:SetHeight(31)
+minimapBtn:SetFrameStrata("MEDIUM")
+minimapBtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 52 - (80 * cos(45)), (80 * sin(45)) - 52)
+minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+minimapBtn:RegisterForDrag("LeftButton")
+
+local minimapIcon = minimapBtn:CreateTexture(nil, "BACKGROUND")
+minimapIcon:SetWidth(23)
+minimapIcon:SetHeight(23)
+minimapIcon:SetTexture("Interface\\Icons\\INV_Chest_Cloth_15")
+minimapIcon:SetPoint("TOPLEFT", 3, -3)
+
+local minimapBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
+minimapBorder:SetWidth(53)
+minimapBorder:SetHeight(53)
+minimapBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+minimapBorder:SetPoint("TOPLEFT")
+
+minimapBtn:SetScript("OnClick", function(self, button)
+    if button == "LeftButton" then
+        if PL:IsVisible() then
+            PL:Hide()
+        else
+            PL:Show()
+        end
+    elseif button == "RightButton" then
+        if settings.showPrimary and settings.showSecondary then
+            selectedMode = 1
+        elseif settings.showPrimary then
+            selectedMode = 2
+        else
+            selectedMode = 3
+        end
+        UpdateRadioSelection()
+        toggleCompact:SetChecked(settings.compact)
+        toggleLock:SetChecked(settings.locked)
+        OptionsFrame:Show()
+    end
+end)
+
+minimapBtn:SetScript("OnDragStart", function(self)
+    self:StartMoving()
+end)
+
+minimapBtn:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+end)
+
+minimapBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(minimapBtn, "ANCHOR_LEFT")
+    GameTooltip:SetText("Profession Levels")
+    GameTooltip:AddLine("Left Click: Toggle Frame", 1, 1, 1)
+    GameTooltip:AddLine("Right Click: Settings", 1, 1, 1)
+    GameTooltip:Show()
+end)
+
+minimapBtn:SetScript("OnLeave", function()
+    GameTooltip:Hide()
 end)
 
 -- =====================================================
@@ -380,7 +468,9 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         settings.locked = false
         settings.showPrimary = true
         settings.showSecondary = true
+        settings.showMinimap = true
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        minimapBtn:Show()
         UpdateProfessions()
     elseif msg == "config" or msg == "options" or msg == "settings" then
         if settings.showPrimary and settings.showSecondary then
@@ -393,6 +483,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         UpdateRadioSelection()
         toggleCompact:SetChecked(settings.compact)
         toggleLock:SetChecked(settings.locked)
+        toggleMinimap:SetChecked(settings.showMinimap)
         OptionsFrame:Show()
     elseif msg == "primary" then
         settings.showPrimary = true
@@ -421,5 +512,12 @@ PL:RegisterEvent("PLAYER_LOGIN")
 PL:RegisterEvent("SKILL_LINES_CHANGED")
 
 PL:SetScript("OnEvent", function()
+    if event == "PLAYER_LOGIN" then
+        if settings.showMinimap then
+            minimapBtn:Show()
+        else
+            minimapBtn:Hide()
+        end
+    end
     UpdateProfessions()
 end)
