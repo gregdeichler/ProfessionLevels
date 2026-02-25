@@ -197,11 +197,23 @@ minimapBtn:SetFrameStrata("MEDIUM")
 minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
+local minimapBg = minimapBtn:CreateTexture(nil, "BACKGROUND")
+minimapBg:SetWidth(27)
+minimapBg:SetHeight(27)
+minimapBg:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+minimapBg:SetPoint("CENTER", 0, 0)
+
 local minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
-minimapIcon:SetWidth(22)
-minimapIcon:SetHeight(22)
+minimapIcon:SetWidth(18)
+minimapIcon:SetHeight(18)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
+
+local minimapRing = minimapBtn:CreateTexture(nil, "OVERLAY")
+minimapRing:SetWidth(27)
+minimapRing:SetHeight(27)
+minimapRing:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+minimapRing:SetPoint("CENTER", 0, 0)
 
 minimapBtn:SetScript("OnClick", function(self, button)
     if IsShiftKeyDown() then
