@@ -1,8 +1,10 @@
 -- =====================================================
--- Profession Levels 2.2 (Stable Layout)
+-- Profession Levels 2.2 (Polished Final)
 -- • Balanced padding
 -- • No clipping
--- • Proper compact ↔ normal switching
+-- • Clean compact toggle
+-- • Compact auto-resizes to content
+-- • Normal restores previous size
 -- =====================================================
 
 local PL = CreateFrame("Frame", "ProfessionLevelsFrame", UIParent)
@@ -28,9 +30,10 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
+ProfessionLevelsDB.normalHeight = ProfessionLevelsDB.normalHeight or 180
 
 -- =====================================================
--- Scroll Setup (Symmetrical Padding)
+-- Scroll Setup
 -- =====================================================
 
 local ScrollFrame = CreateFrame("ScrollFrame", nil, PL)
@@ -67,7 +70,6 @@ end
 -- =====================================================
 
 local function CreateRow(index)
-
     local row = CreateFrame("Frame", nil, Content)
     PL.rows[index] = row
     return row
@@ -139,7 +141,7 @@ local function ClearRows()
 end
 
 -- =====================================================
--- Update Function (Logic unchanged)
+-- Update Function
 -- =====================================================
 
 local function UpdateProfessions()
@@ -197,16 +199,29 @@ local function UpdateProfessions()
 
     Content:SetHeight(math.max(contentHeight, ScrollFrame:GetHeight()))
 
-    local minHeight = contentHeight + 40
-    if PL:GetHeight() < minHeight then
-        PL:SetHeight(minHeight)
+    local neededHeight = contentHeight + 40
+
+    if ProfessionLevelsDB.compact then
+        PL:SetHeight(neededHeight)
+    else
+        if PL:GetHeight() < neededHeight then
+            PL:SetHeight(neededHeight)
+        end
+        ProfessionLevelsDB.normalHeight = PL:GetHeight()
     end
-    PL:SetMinResize(260, minHeight)
+
+    PL:SetMinResize(260, neededHeight)
 end
 
 PL:SetScript("OnSizeChanged", function()
-    UpdateProfessions()
+    if not ProfessionLevelsDB.compact then
+        ProfessionLevelsDB.normalHeight = PL:GetHeight()
+    end
 end)
+
+-- =====================================================
+-- Slash Commands
+-- =====================================================
 
 SLASH_PROFESSIONLEVELS1 = "/pl"
 SlashCmdList["PROFESSIONLEVELS"] = function(arg)
@@ -218,6 +233,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         UpdateProfessions()
     elseif msg == "normal" then
         ProfessionLevelsDB.compact = false
+        PL:SetHeight(ProfessionLevelsDB.normalHeight or 180)
         UpdateProfessions()
     elseif msg == "lock" then
         ProfessionLevelsDB.locked = true
@@ -226,6 +242,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "reset" then
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
+        ProfessionLevelsDB.normalHeight = 180
         PL:SetWidth(330)
         PL:SetHeight(180)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
