@@ -1,17 +1,18 @@
 -- =====================================================
--- Profession Levels 3.0 (Safe Upgrade of 2.2)
--- Adds:
---   /pl primary
---   /pl secondary
---   /pl both
---   Smart resize floor
+-- Profession Levels 2.2 (Cosmetic Improved)
+-- Same logic as working 2.2
+-- Added:
+--   • Left padding
+--   • Better internal spacing
+--   • No content clipping
+--   • Safer minimum width
 -- =====================================================
 
 local PL = CreateFrame("Frame", "ProfessionLevelsFrame", UIParent)
-PL:SetWidth(300)
+PL:SetWidth(320)
 PL:SetHeight(180)
 PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-PL:SetMinResize(220, 120)
+PL:SetMinResize(260, 120)
 PL:SetClampedToScreen(true)
 PL:EnableMouse(true)
 PL:SetMovable(true)
@@ -34,19 +35,17 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
-ProfessionLevelsDB.filter = ProfessionLevelsDB.filter or "both" 
--- "both", "primary", "secondary"
 
 -- =====================================================
--- Scroll Setup
+-- Scroll Setup (More Padding)
 -- =====================================================
 
 local ScrollFrame = CreateFrame("ScrollFrame", nil, PL)
-ScrollFrame:SetPoint("TOPLEFT", 10, -10)
-ScrollFrame:SetPoint("BOTTOMRIGHT", -24, 10)
+ScrollFrame:SetPoint("TOPLEFT", 16, -16)
+ScrollFrame:SetPoint("BOTTOMRIGHT", -32, 16)
 
 local Content = CreateFrame("Frame", nil, ScrollFrame)
-Content:SetWidth(PL:GetWidth() - 40)
+Content:SetWidth(PL:GetWidth() - 60)
 Content:SetHeight(1)
 ScrollFrame:SetScrollChild(Content)
 
@@ -71,7 +70,7 @@ local function GetSpellIcon(skillName)
 end
 
 -- =====================================================
--- Row Creation
+-- Row Creation (Left Padding Added)
 -- =====================================================
 
 local function CreateRow(index)
@@ -82,8 +81,8 @@ local function CreateRow(index)
 
     local row = CreateFrame("Frame", nil, Content)
     row:SetHeight(rowHeight)
-    row:SetPoint("TOPLEFT", 0, -((index - 1) * (rowHeight + 4)))
-    row:SetPoint("RIGHT", Content, "RIGHT", 0, 0)
+    row:SetPoint("TOPLEFT", 8, -((index - 1) * (rowHeight + 4)))
+    row:SetPoint("RIGHT", Content, "RIGHT", -8, 0)
 
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetWidth(compact and 0 or 16)
@@ -120,19 +119,18 @@ local function ClearRows()
 end
 
 -- =====================================================
--- Update Function (Based EXACTLY on 2.2)
+-- Update Function (UNCHANGED LOGIC)
 -- =====================================================
 
 local function UpdateProfessions()
 
     ClearRows()
-    Content:SetWidth(PL:GetWidth() - 40)
+    Content:SetWidth(PL:GetWidth() - 60)
 
     local index = 1
     local contentHeight = 0
     local rowSpacing = ProfessionLevelsDB.compact and 18 or 30
     local inSection = false
-    local currentHeader = nil
 
     -- Expand headers
     for i = 1, GetNumSkillLines() do
@@ -148,63 +146,49 @@ local function UpdateProfessions()
         if isHeader then
             if name == "Professions" or name == "Secondary Skills" then
                 inSection = true
-                currentHeader = name
             else
                 inSection = false
-                currentHeader = nil
             end
 
         elseif inSection and rank and maxRank and maxRank > 0 then
 
-            -- Filtering without breaking detection
-            local allow = false
+            local row = PL.rows[index] or CreateRow(index)
+            row:Show()
 
-            if ProfessionLevelsDB.filter == "both" then
-                allow = true
-            elseif ProfessionLevelsDB.filter == "primary" and currentHeader == "Professions" then
-                allow = true
-            elseif ProfessionLevelsDB.filter == "secondary" and currentHeader == "Secondary Skills" then
-                allow = true
-            end
+            row.name:SetText(name)
+            row.value:SetText(rank.."/"..maxRank)
 
-            if allow then
-                local row = PL.rows[index] or CreateRow(index)
-                row:Show()
+            if ProfessionLevelsDB.compact then
+                row.bar:Hide()
+                row.icon:Hide()
+                row.name:SetPoint("LEFT", 2, 0)
+            else
+                row.bar:Show()
+                row.icon:Show()
+                row.icon:SetTexture(GetSpellIcon(name))
+                row.bar:SetMinMaxValues(0, maxRank)
+                row.bar:SetValue(rank)
 
-                row.name:SetText(name)
-                row.value:SetText(rank.."/"..maxRank)
-
-                if ProfessionLevelsDB.compact then
-                    row.bar:Hide()
-                    row.icon:Hide()
-                    row.name:SetPoint("LEFT", 2, 0)
+                if rank == maxRank then
+                    row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
                 else
-                    row.bar:Show()
-                    row.icon:Show()
-                    row.icon:SetTexture(GetSpellIcon(name))
-                    row.bar:SetMinMaxValues(0, maxRank)
-                    row.bar:SetValue(rank)
-
-                    if rank == maxRank then
-                        row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
-                    else
-                        row.bar:SetStatusBarColor(0.9, 0.7, 0.1)
-                    end
+                    row.bar:SetStatusBarColor(0.9, 0.7, 0.1)
                 end
-
-                index = index + 1
-                contentHeight = contentHeight + rowSpacing
             end
+
+            index = index + 1
+            contentHeight = contentHeight + rowSpacing
         end
     end
 
     Content:SetHeight(math.max(contentHeight, ScrollFrame:GetHeight()))
+    Content:SetWidth(PL:GetWidth() - 60)
 
     local minHeight = contentHeight + 40
     if PL:GetHeight() < minHeight then
         PL:SetHeight(minHeight)
     end
-    PL:SetMinResize(220, minHeight)
+    PL:SetMinResize(260, minHeight)
 end
 
 -- =====================================================
@@ -216,16 +200,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
 
     local msg = string.lower(arg or "")
 
-    if msg == "primary" then
-        ProfessionLevelsDB.filter = "primary"
-        UpdateProfessions()
-    elseif msg == "secondary" then
-        ProfessionLevelsDB.filter = "secondary"
-        UpdateProfessions()
-    elseif msg == "both" then
-        ProfessionLevelsDB.filter = "both"
-        UpdateProfessions()
-    elseif msg == "compact" then
+    if msg == "compact" then
         ProfessionLevelsDB.compact = true
         UpdateProfessions()
     elseif msg == "normal" then
@@ -236,10 +211,9 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "unlock" then
         ProfessionLevelsDB.locked = false
     elseif msg == "reset" then
-        ProfessionLevelsDB.filter = "both"
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
-        PL:SetWidth(300)
+        PL:SetWidth(320)
         PL:SetHeight(180)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         UpdateProfessions()
@@ -247,7 +221,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
 end
 
 -- =====================================================
--- Drag & Resize (Unchanged)
+-- Drag & Resize
 -- =====================================================
 
 PL:SetScript("OnDragStart", function()
