@@ -77,7 +77,7 @@ local settings = GetCharSettings()
 
 local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions")
 OptionsFrame:SetWidth(240)
-OptionsFrame:SetHeight(280)
+OptionsFrame:SetHeight(200)
 OptionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 OptionsFrame:SetFrameStrata("DIALOG")
 OptionsFrame:Hide()
@@ -201,64 +201,15 @@ local iconOptions = {
     { text = "Tailoring", value = "Trade_Tailoring" },
 }
 
-local iconLabel = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-iconLabel:SetPoint("TOPLEFT", 20, -185)
-iconLabel:SetText("Minimap Icon:")
-
-local currentIconIndex = 1
-
-for i, opt in ipairs(iconOptions) do
-    if opt.value == settings.minimapIcon then
-        currentIconIndex = i
-        break
-    end
-end
-
-local iconDisplay = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-iconDisplay:SetPoint("TOPLEFT", 70, -185)
-iconDisplay:SetText(iconOptions[currentIconIndex].text)
-
-local prevIconBtn = CreateFrame("Button", nil, OptionsFrame)
-prevIconBtn:SetPoint("TOPLEFT", 35, -182)
-prevIconBtn:SetWidth(20)
-prevIconBtn:SetHeight(20)
-local prevText = prevIconBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-prevText:SetPoint("CENTER", 0, 0)
-prevText:SetText("<")
-prevIconBtn:SetScript("OnClick", function()
-    currentIconIndex = currentIconIndex - 1
-    if currentIconIndex < 1 then currentIconIndex = iconOptionsCount end
-    settings.minimapIcon = iconOptions[currentIconIndex].value
-    minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
-    iconDisplay:SetText(iconOptions[currentIconIndex].text)
-end)
-
-local nextIconBtn = CreateFrame("Button", nil, OptionsFrame)
-nextIconBtn:SetPoint("TOPLEFT", 200, -182)
-nextIconBtn:SetWidth(20)
-nextIconBtn:SetHeight(20)
-local nextText = nextIconBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-nextText:SetPoint("CENTER", 0, 0)
-nextText:SetText(">")
-nextIconBtn:SetScript("OnClick", function()
-    currentIconIndex = currentIconIndex + 1
-    if currentIconIndex > iconOptionsCount then currentIconIndex = 1 end
-    settings.minimapIcon = iconOptions[currentIconIndex].value
-    minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
-    iconDisplay:SetText(iconOptions[currentIconIndex].text)
-end)
-
 -- =====================================================
 -- Minimap Button
 -- =====================================================
 
-local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
+local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap, "MinimapButtonTemplate")
 minimapBtn:SetWidth(31)
 minimapBtn:SetHeight(31)
 minimapBtn:SetFrameStrata("MEDIUM")
 minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
-minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-minimapBtn:RegisterForDrag("LeftButton")
 
 local minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
 minimapIcon:SetWidth(22)
@@ -586,6 +537,7 @@ PL:SetScript("OnEvent", function()
             minimapBtn:Hide()
         end
         minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
+        PL:Show()
     end
     UpdateProfessions()
 end)
