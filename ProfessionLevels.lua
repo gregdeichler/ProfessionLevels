@@ -63,6 +63,7 @@ local function GetCharSettings()
             showPrimary = true,
             showSecondary = true,
             showMinimap = true,
+            minimapIcon = "Trade_Engineering",
         }
     end
     return ProfessionLevelsDB[charKey]
@@ -76,7 +77,7 @@ local settings = GetCharSettings()
 
 local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions")
 OptionsFrame:SetWidth(240)
-OptionsFrame:SetHeight(195)
+OptionsFrame:SetHeight(280)
 OptionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 OptionsFrame:SetFrameStrata("DIALOG")
 OptionsFrame:Hide()
@@ -183,6 +184,49 @@ toggleMinimap:SetScript("OnClick", function()
     end
 end)
 
+local iconLabel = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+iconLabel:SetPoint("TOPLEFT", 20, -180)
+iconLabel:SetText("Minimap Icon:")
+
+local iconDropdown = CreateFrame("Frame", "PLIconDropdown", OptionsFrame, "UIDropDownMenuTemplate")
+iconDropdown:SetPoint("TOPLEFT", 20, -200)
+iconDropdown:SetWidth(180)
+
+local iconOptions = {
+    { text = "Engineering", value = "Trade_Engineering" },
+    { text = "Alchemy", value = "Trade_Alchemy" },
+    { text = "Blacksmithing", value = "Trade_BlackSmithing" },
+    { text = "Cooking", value = "INV_Misc_Food_15" },
+    { text = "Enchanting", value = "Trade_Engraving" },
+    { text = "First Aid", value = "INV_Drink_16" },
+    { text = "Fishing", value = "Trade_Fishing" },
+    { text = "Herbalism", value = "Trade_Herbalism" },
+    { text = "Leatherworking", value = "Trade_LeatherWorking" },
+    { text = "Mining", value = "Trade_Mining" },
+    { text = "Skinning", value = "INV_Misc_Pelt_Wolf_01" },
+    { text = "Tailoring", value = "Trade_Tailoring" },
+}
+
+local function UpdateIconDropdown()
+    UIDropDownMenu_SetSelectedValue(iconDropdown, settings.minimapIcon or "Trade_Engineering")
+end
+
+UIDropDownMenu_Initialize(iconDropdown, function()
+    for _, option in ipairs(iconOptions) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text = option.text
+        info.value = option.value
+        info.func = function()
+            settings.minimapIcon = option.value
+            minimapIcon:SetTexture("Interface\\Icons\\" .. option.value)
+            UIDropDownMenu_SetSelectedValue(iconDropdown, option.value)
+        end
+        UIDropDownMenu_AddButton(info)
+    end
+end)
+
+UIDropDownMenu_SetSelectedValue(iconDropdown, settings.minimapIcon or "Trade_Engineering")
+
 -- =====================================================
 -- Minimap Button
 -- =====================================================
@@ -196,10 +240,10 @@ minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimapBtn:RegisterForDrag("LeftButton")
 
 local minimapIcon = minimapBtn:CreateTexture(nil, "BACKGROUND")
-minimapIcon:SetWidth(23)
-minimapIcon:SetHeight(23)
-minimapIcon:SetTexture("Interface\\Icons\\INV_Chest_Cloth_15")
-minimapIcon:SetPoint("TOPLEFT", 3, -3)
+minimapIcon:SetWidth(20)
+minimapIcon:SetHeight(20)
+minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
+minimapIcon:SetPoint("CENTER", 0, 0)
 
 local minimapBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
 minimapBorder:SetWidth(53)
@@ -469,6 +513,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         settings.showPrimary = true
         settings.showSecondary = true
         settings.showMinimap = true
+        settings.minimapIcon = "Trade_Engineering"
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         minimapBtn:Show()
         UpdateProfessions()
@@ -484,6 +529,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         toggleCompact:SetChecked(settings.compact)
         toggleLock:SetChecked(settings.locked)
         toggleMinimap:SetChecked(settings.showMinimap)
+        UpdateIconDropdown()
         OptionsFrame:Show()
     elseif msg == "primary" then
         settings.showPrimary = true
@@ -518,6 +564,7 @@ PL:SetScript("OnEvent", function()
         else
             minimapBtn:Hide()
         end
+        minimapIcon:SetTexture("Interface\\Icons\\" .. (settings.minimapIcon or "Trade_Engineering"))
     end
     UpdateProfessions()
 end)
