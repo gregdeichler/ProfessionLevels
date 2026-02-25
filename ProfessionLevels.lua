@@ -179,10 +179,12 @@ toggleMinimap.text:SetText("Show Minimap Button")
 toggleMinimap:SetChecked(settings.showMinimap)
 toggleMinimap:SetScript("OnClick", function()
     settings.showMinimap = toggleMinimap:GetChecked()
-    if settings.showMinimap then
-        minimapBtn:Show()
-    else
-        minimapBtn:Hide()
+    if minimapBtn then
+        if settings.showMinimap then
+            minimapBtn:Show()
+        else
+            minimapBtn:Hide()
+        end
     end
 end)
 
@@ -512,12 +514,16 @@ PL:RegisterEvent("SKILL_LINES_CHANGED")
 
 PL:SetScript("OnEvent", function()
     if event == "PLAYER_LOGIN" then
-        if settings.showMinimap then
-            minimapBtn:Show()
-        else
-            minimapBtn:Hide()
+        if minimapBtn then
+            if settings.showMinimap then
+                minimapBtn:Show()
+            else
+                minimapBtn:Hide()
+            end
         end
-        minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
+        if minimapIcon then
+            minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
+        end
         PL:Show()
     end
     UpdateProfessions()
