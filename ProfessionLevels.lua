@@ -1,17 +1,24 @@
 -- =====================================================
--- Profession Levels 2.3 (Stable Working Version)
+-- Profession Levels 2.4 (Auto Height Only)
+-- • Fixed width
+-- • Auto height based on content
+-- • No manual resizing
+-- • ScrollFrame retained (stable)
 -- =====================================================
 
+local FIXED_WIDTH = 330
+
 local PL = CreateFrame("Frame", "ProfessionLevelsFrame", UIParent)
-PL:SetWidth(330)
+PL:SetWidth(FIXED_WIDTH)
 PL:SetHeight(180)
 PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-PL:SetMinResize(260, 120)
 PL:SetClampedToScreen(true)
 PL:EnableMouse(true)
 PL:SetMovable(true)
-PL:SetResizable(true)
 PL:RegisterForDrag("LeftButton")
+
+-- 🔥 Resizing REMOVED
+PL:SetResizable(false)
 
 PL:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -25,10 +32,9 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
-ProfessionLevelsDB.normalHeight = ProfessionLevelsDB.normalHeight or 180
 
 -- =====================================================
--- Scroll Setup
+-- Scroll Setup (unchanged)
 -- =====================================================
 
 local ScrollFrame = CreateFrame("ScrollFrame", nil, PL)
@@ -36,7 +42,7 @@ ScrollFrame:SetPoint("TOPLEFT", 18, -18)
 ScrollFrame:SetPoint("BOTTOMRIGHT", -18, 18)
 
 local Content = CreateFrame("Frame", nil, ScrollFrame)
-Content:SetWidth(PL:GetWidth() - 36)
+Content:SetWidth(FIXED_WIDTH - 36)
 Content:SetHeight(1)
 ScrollFrame:SetScrollChild(Content)
 
@@ -150,13 +156,13 @@ local function ClearRows()
 end
 
 -- =====================================================
--- Update Function
+-- Update Function (height now always matches content)
 -- =====================================================
 
 local function UpdateProfessions()
 
     ClearRows()
-    Content:SetWidth(PL:GetWidth() - 36)
+    Content:SetWidth(FIXED_WIDTH - 36)
 
     local index = 1
     local contentHeight = 0
@@ -206,27 +212,12 @@ local function UpdateProfessions()
         end
     end
 
-    Content:SetHeight(math.max(contentHeight, ScrollFrame:GetHeight()))
+    Content:SetHeight(contentHeight)
 
+    -- 🔥 Frame height now matches content exactly
     local neededHeight = contentHeight + 40
-
-    if ProfessionLevelsDB.compact then
-        PL:SetHeight(neededHeight)
-    else
-        if PL:GetHeight() < neededHeight then
-            PL:SetHeight(neededHeight)
-        end
-        ProfessionLevelsDB.normalHeight = PL:GetHeight()
-    end
-
-    PL:SetMinResize(260, neededHeight)
+    PL:SetHeight(neededHeight)
 end
-
-PL:SetScript("OnSizeChanged", function()
-    if not ProfessionLevelsDB.compact then
-        ProfessionLevelsDB.normalHeight = PL:GetHeight()
-    end
-end)
 
 -- =====================================================
 -- Slash Commands
@@ -242,7 +233,6 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         UpdateProfessions()
     elseif msg == "normal" then
         ProfessionLevelsDB.compact = false
-        PL:SetHeight(ProfessionLevelsDB.normalHeight or 180)
         UpdateProfessions()
     elseif msg == "lock" then
         ProfessionLevelsDB.locked = true
@@ -251,9 +241,6 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "reset" then
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
-        ProfessionLevelsDB.normalHeight = 180
-        PL:SetWidth(330)
-        PL:SetHeight(180)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         UpdateProfessions()
     end
@@ -265,19 +252,6 @@ end)
 
 PL:SetScript("OnDragStop", function()
     this:StopMovingOrSizing()
-end)
-
-local resize = CreateFrame("Button", nil, PL)
-resize:SetWidth(16)
-resize:SetHeight(16)
-resize:SetPoint("BOTTOMRIGHT", -6, 6)
-
-resize:SetScript("OnMouseDown", function()
-    if not ProfessionLevelsDB.locked then PL:StartSizing("BOTTOMRIGHT") end
-end)
-
-resize:SetScript("OnMouseUp", function()
-    PL:StopMovingOrSizing()
 end)
 
 PL:RegisterEvent("PLAYER_LOGIN")
