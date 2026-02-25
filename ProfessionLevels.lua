@@ -179,10 +179,12 @@ toggleMinimap.text:SetText("Show Minimap Button")
 toggleMinimap:SetChecked(settings.showMinimap)
 toggleMinimap:SetScript("OnClick", function()
     settings.showMinimap = toggleMinimap:GetChecked()
-    if settings.showMinimap then
-        minimapBtn:Show()
-    else
-        minimapBtn:Hide()
+    if minimapBtn then
+        if settings.showMinimap then
+            minimapBtn:Show()
+        else
+            minimapBtn:Hide()
+        end
     end
 end)
 
