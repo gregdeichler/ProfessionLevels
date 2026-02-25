@@ -1,22 +1,23 @@
 -- =====================================================
--- Profession Levels 2.3 (Final Polished Version)
--- • Balanced padding
--- • No clipping
--- • Clean compact toggle
--- • Compact auto-resizes to content
--- • Normal restores previous size
--- • Mining & Herbalism fallback icons added
+-- Profession Levels 2.4 (Cosmetic Lockdown Version)
+-- • No resizing
+-- • Auto height based on professions
+-- • Equal padding on all sides
+-- • Clean compact spacing
+-- • No clipping possible
 -- =====================================================
 
+local FRAME_WIDTH = 300
+local PADDING = 12
+local ROW_SPACING_NORMAL = 30
+local ROW_SPACING_COMPACT = 18
+
 local PL = CreateFrame("Frame", "ProfessionLevelsFrame", UIParent)
-PL:SetWidth(330)
-PL:SetHeight(180)
+PL:SetWidth(FRAME_WIDTH)
 PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-PL:SetMinResize(260, 120)
 PL:SetClampedToScreen(true)
 PL:EnableMouse(true)
 PL:SetMovable(true)
-PL:SetResizable(true)
 PL:RegisterForDrag("LeftButton")
 
 PL:SetBackdrop({
@@ -31,25 +32,19 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
-ProfessionLevelsDB.normalHeight = ProfessionLevelsDB.normalHeight or 180
 
 -- =====================================================
--- Scroll Setup
+-- Content Frame (No ScrollFrame anymore)
 -- =====================================================
 
-local ScrollFrame = CreateFrame("ScrollFrame", nil, PL)
-ScrollFrame:SetPoint("TOPLEFT", 18, -18)
-ScrollFrame:SetPoint("BOTTOMRIGHT", -18, 18)
-
-local Content = CreateFrame("Frame", nil, ScrollFrame)
-Content:SetWidth(PL:GetWidth() - 36)
-Content:SetHeight(1)
-ScrollFrame:SetScrollChild(Content)
+local Content = CreateFrame("Frame", nil, PL)
+Content:SetPoint("TOPLEFT", PADDING, -PADDING)
+Content:SetPoint("TOPRIGHT", -PADDING, -PADDING)
 
 PL.rows = {}
 
 -- =====================================================
--- Spell Icon Cache + Fallback Icons
+-- Icon Cache + Fallbacks
 -- =====================================================
 
 local spellCache = {}
@@ -77,11 +72,7 @@ local function GetSpellIcon(skillName)
         end
     end
 
-    if fallbackIcons[skillName] then
-        return fallbackIcons[skillName]
-    end
-
-    return "Interface\\Icons\\INV_Misc_Gear_01"
+    return fallbackIcons[skillName] or "Interface\\Icons\\INV_Misc_Gear_01"
 end
 
 -- =====================================================
@@ -98,55 +89,69 @@ local function SetupRowLayout(row, index)
 
     local compact = ProfessionLevelsDB.compact
     local rowHeight = compact and 16 or 26
-    local barHeight = compact and 0 or 12
-    local font = compact and "GameFontHighlightSmall" or "GameFontNormal"
+    local rowSpacing = compact and ROW_SPACING_COMPACT or ROW_SPACING_NORMAL
 
     row:SetHeight(rowHeight)
     row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", 8, -((index - 1) * (rowHeight + 4)))
-    row:SetPoint("RIGHT", Content, "RIGHT", -8, 0)
+    row:SetPoint("TOPLEFT", 0, -((index - 1) * rowSpacing))
+    row:SetPoint("RIGHT", Content, "RIGHT", 0, 0)
 
+    -- Icon
     if not row.icon then
         row.icon = row:CreateTexture(nil, "ARTWORK")
     end
-    row.icon:SetWidth(compact and 0 or 16)
-    row.icon:SetHeight(compact and 0 or 16)
-    row.icon:SetPoint("LEFT", 2, 0)
-
-    if not row.name then
-        row.name = row:CreateFontString(nil, "OVERLAY")
-    end
-    row.name:SetFontObject(font)
-    row.name:ClearAllPoints()
 
     if compact then
         row.icon:Hide()
-        row.name:SetPoint("LEFT", row, "LEFT", 2, 0)
     else
+        row.icon:SetWidth(16)
+        row.icon:SetHeight(16)
+        row.icon:SetPoint("LEFT", 0, 0)
         row.icon:Show()
+    end
+
+    -- Name
+    if not row.name then
+        row.name = row:CreateFontString(nil, "OVERLAY")
+    end
+
+    row.name:SetFontObject(compact and "GameFontHighlightSmall" or "GameFontNormal")
+    row.name:ClearAllPoints()
+
+    if compact then
+        row.name:SetPoint("LEFT", row, "LEFT", 0, 0)
+    else
         row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
     end
 
+    -- Value
     if not row.value then
         row.value = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        row.value:SetPoint("RIGHT", row, "RIGHT", -6, 0)
     end
 
+    row.value:ClearAllPoints()
+
+    if compact then
+        -- Remove large gap in compact mode
+        row.value:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
+    else
+        row.value:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+    end
+
+    -- Bar
     if not row.bar then
         row.bar = CreateFrame("StatusBar", nil, row)
-        row.bar:SetFrameLevel(row:GetFrameLevel() - 1)
         row.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
         row.bar.bg = row.bar:CreateTexture(nil, "BACKGROUND")
         row.bar.bg:SetAllPoints()
         row.bar.bg:SetTexture(0, 0, 0, 0.5)
     end
 
-    row.bar:SetHeight(barHeight)
-    row.bar:ClearAllPoints()
-
     if compact then
         row.bar:Hide()
     else
+        row.bar:SetHeight(12)
+        row.bar:ClearAllPoints()
         row.bar:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
         row.bar:SetPoint("RIGHT", row.value, "LEFT", -6, 0)
         row.bar:Show()
@@ -166,12 +171,10 @@ end
 local function UpdateProfessions()
 
     ClearRows()
-    Content:SetWidth(PL:GetWidth() - 36)
 
     local index = 1
-    local contentHeight = 0
-    local rowSpacing = ProfessionLevelsDB.compact and 18 or 30
     local inSection = false
+    local rowSpacing = ProfessionLevelsDB.compact and ROW_SPACING_COMPACT or ROW_SPACING_NORMAL
 
     for i = 1, GetNumSkillLines() do
         local name, isHeader, isExpanded = GetSkillLineInfo(i)
@@ -212,31 +215,13 @@ local function UpdateProfessions()
             end
 
             index = index + 1
-            contentHeight = contentHeight + rowSpacing
         end
     end
 
-    Content:SetHeight(math.max(contentHeight, ScrollFrame:GetHeight()))
+    local totalHeight = ((index - 1) * rowSpacing) + (PADDING * 2)
 
-    local neededHeight = contentHeight + 40
-
-    if ProfessionLevelsDB.compact then
-        PL:SetHeight(neededHeight)
-    else
-        if PL:GetHeight() < neededHeight then
-            PL:SetHeight(neededHeight)
-        end
-        ProfessionLevelsDB.normalHeight = PL:GetHeight()
-    end
-
-    PL:SetMinResize(260, neededHeight)
+    PL:SetHeight(totalHeight)
 end
-
-PL:SetScript("OnSizeChanged", function()
-    if not ProfessionLevelsDB.compact then
-        ProfessionLevelsDB.normalHeight = PL:GetHeight()
-    end
-end)
 
 -- =====================================================
 -- Slash Commands
@@ -252,7 +237,6 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         UpdateProfessions()
     elseif msg == "normal" then
         ProfessionLevelsDB.compact = false
-        PL:SetHeight(ProfessionLevelsDB.normalHeight or 180)
         UpdateProfessions()
     elseif msg == "lock" then
         ProfessionLevelsDB.locked = true
@@ -261,9 +245,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "reset" then
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
-        ProfessionLevelsDB.normalHeight = 180
-        PL:SetWidth(330)
-        PL:SetHeight(180)
+        PL:SetWidth(FRAME_WIDTH)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         UpdateProfessions()
     end
@@ -275,19 +257,6 @@ end)
 
 PL:SetScript("OnDragStop", function()
     this:StopMovingOrSizing()
-end)
-
-local resize = CreateFrame("Button", nil, PL)
-resize:SetWidth(16)
-resize:SetHeight(16)
-resize:SetPoint("BOTTOMRIGHT", -6, 6)
-
-resize:SetScript("OnMouseDown", function()
-    if not ProfessionLevelsDB.locked then PL:StartSizing("BOTTOMRIGHT") end
-end)
-
-resize:SetScript("OnMouseUp", function()
-    PL:StopMovingOrSizing()
 end)
 
 PL:RegisterEvent("PLAYER_LOGIN")
