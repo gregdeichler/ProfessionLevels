@@ -222,8 +222,9 @@ local prevIconBtn = CreateFrame("Button", nil, OptionsFrame)
 prevIconBtn:SetPoint("TOPLEFT", 35, -182)
 prevIconBtn:SetWidth(20)
 prevIconBtn:SetHeight(20)
-prevIconBtn:SetNormalFontObject("GameFontHighlightSmall")
-prevIconBtn:SetText("<")
+local prevText = prevIconBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+prevText:SetPoint("CENTER", 0, 0)
+prevText:SetText("<")
 prevIconBtn:SetScript("OnClick", function()
     currentIconIndex = currentIconIndex - 1
     if currentIconIndex < 1 then currentIconIndex = iconOptionsCount end
@@ -236,8 +237,9 @@ local nextIconBtn = CreateFrame("Button", nil, OptionsFrame)
 nextIconBtn:SetPoint("TOPLEFT", 200, -182)
 nextIconBtn:SetWidth(20)
 nextIconBtn:SetHeight(20)
-nextIconBtn:SetNormalFontObject("GameFontHighlightSmall")
-nextIconBtn:SetText(">")
+local nextText = nextIconBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+nextText:SetPoint("CENTER", 0, 0)
+nextText:SetText(">")
 nextIconBtn:SetScript("OnClick", function()
     currentIconIndex = currentIconIndex + 1
     if currentIconIndex > iconOptionsCount then currentIconIndex = 1 end
