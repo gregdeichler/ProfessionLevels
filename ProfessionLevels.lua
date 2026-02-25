@@ -205,11 +205,12 @@ local iconOptions = {
 -- Minimap Button
 -- =====================================================
 
-local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap, "MinimapButtonTemplate")
+local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
 minimapBtn:SetWidth(31)
 minimapBtn:SetHeight(31)
 minimapBtn:SetFrameStrata("MEDIUM")
 minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
+minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 local minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
 minimapIcon:SetWidth(22)
@@ -217,14 +218,24 @@ minimapIcon:SetHeight(22)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
 
-minimapBtn:SetScript("OnClick", function(self, button)
-    if button == "LeftButton" then
-        if PL:IsVisible() then
-            PL:Hide()
-        else
-            PL:Show()
-        end
-    elseif button == "RightButton" then
+local minimapBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
+minimapBorder:SetWidth(53)
+minimapBorder:SetHeight(53)
+minimapBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+minimapBorder:SetPoint("CENTER", 0, 0)
+
+minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+minimapBtn:SetScript("OnClick", function()
+    if PL:IsVisible() then
+        PL:Hide()
+    else
+        PL:Show()
+    end
+end)
+
+minimapBtn:SetScript("OnMouseDown", function(self, button)
+    if button == "RightButton" then
         if settings.showPrimary and settings.showSecondary then
             selectedMode = 1
         elseif settings.showPrimary then
