@@ -2,7 +2,8 @@
 ## Title: Profession Levels
 ## Notes: Movable profession tracking frame.
 ## Author: Greg
-## Version: 0.34 Beta
+## Version: 0.35 Beta
 ## SavedVariables: ProfessionLevelsDB
+
 
 ProfessionLevels.lua
