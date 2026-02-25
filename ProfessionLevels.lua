@@ -1,10 +1,10 @@
 -- =====================================================
--- Profession Levels 2.4 (Cosmetic Lockdown Version)
+-- Profession Levels 2.5 (Stable Fixed Layout)
 -- • No resizing
 -- • Auto height based on professions
 -- • Equal padding on all sides
--- • Clean compact spacing
--- • No clipping possible
+-- • Compact spacing fixed
+-- • Works correctly on Turtle / 1.12
 -- =====================================================
 
 local FRAME_WIDTH = 300
@@ -34,12 +34,12 @@ ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
 
 -- =====================================================
--- Content Frame (No ScrollFrame anymore)
+-- Content Frame (explicit width so 1.12 doesn't collapse it)
 -- =====================================================
 
 local Content = CreateFrame("Frame", nil, PL)
 Content:SetPoint("TOPLEFT", PADDING, -PADDING)
-Content:SetPoint("TOPRIGHT", -PADDING, -PADDING)
+Content:SetWidth(FRAME_WIDTH - (PADDING * 2))
 
 PL.rows = {}
 
@@ -81,6 +81,7 @@ end
 
 local function CreateRow(index)
     local row = CreateFrame("Frame", nil, Content)
+    row:SetWidth(Content:GetWidth())
     PL.rows[index] = row
     return row
 end
@@ -92,9 +93,9 @@ local function SetupRowLayout(row, index)
     local rowSpacing = compact and ROW_SPACING_COMPACT or ROW_SPACING_NORMAL
 
     row:SetHeight(rowHeight)
+    row:SetWidth(Content:GetWidth())
     row:ClearAllPoints()
     row:SetPoint("TOPLEFT", 0, -((index - 1) * rowSpacing))
-    row:SetPoint("RIGHT", Content, "RIGHT", 0, 0)
 
     -- Icon
     if not row.icon then
@@ -132,7 +133,7 @@ local function SetupRowLayout(row, index)
     row.value:ClearAllPoints()
 
     if compact then
-        -- Remove large gap in compact mode
+        -- Tight spacing in compact
         row.value:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
     else
         row.value:SetPoint("RIGHT", row, "RIGHT", 0, 0)
@@ -245,7 +246,6 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "reset" then
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
-        PL:SetWidth(FRAME_WIDTH)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         UpdateProfessions()
     end
