@@ -1,23 +1,14 @@
 ## Interface: 11200
 ## Title: Profession Levels
-## Notes: Movable profession tracking frame.
-## Author: gregdeichler
-## Version: 0.49 Beta
-## SavedVariables: ProfessionLevelsDB
+## Author: Greg Deichler
+## Version: .3.1 Beta
+## SavedVariablesPerCharacter: ProfessionLevelsDB
+## Dependencies: LibStub, LibProfessions-1.0, AceDB-3.0, AceConfig-3.0, AceGUI-3.0
 
+libs\LibStub\LibStub.lua
+libs\LibProfessions\LibProfessions-1.0.lua
+libs\Ace3\AceDB-3.0\AceDB-3.0.lua
+libs\Ace3\AceConfig-3.0\AceConfig-3.0.lua
+libs\Ace3\AceGUI-3.0\AceGUI-3.0.lua
 
 ProfessionLevels.lua
-
-
-
-
-
-
-
-
-
-
-
-
-
-
