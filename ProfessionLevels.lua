@@ -184,6 +184,8 @@ toggleMinimap:SetScript("OnClick", function()
     end
 end)
 
+local iconOptionsCount = 12
+
 local iconOptions = {
     { text = "Engineering", value = "Trade_Engineering" },
     { text = "Alchemy", value = "Trade_Alchemy" },
@@ -224,7 +226,7 @@ prevIconBtn:SetText("<")
 prevIconBtn:SetNormalFontObject("GameFontHighlightSmall")
 prevIconBtn:SetScript("OnClick", function()
     currentIconIndex = currentIconIndex - 1
-    if currentIconIndex < 1 then currentIconIndex = #iconOptions end
+    if currentIconIndex < 1 then currentIconIndex = iconOptionsCount end
     settings.minimapIcon = iconOptions[currentIconIndex].value
     minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
     iconDisplay:SetText(iconOptions[currentIconIndex].text)
@@ -238,7 +240,7 @@ nextIconBtn:SetText(">")
 nextIconBtn:SetNormalFontObject("GameFontHighlightSmall")
 nextIconBtn:SetScript("OnClick", function()
     currentIconIndex = currentIconIndex + 1
-    if currentIconIndex > #iconOptions then currentIconIndex = 1 end
+    if currentIconIndex > iconOptionsCount then currentIconIndex = 1 end
     settings.minimapIcon = iconOptions[currentIconIndex].value
     minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
     iconDisplay:SetText(iconOptions[currentIconIndex].text)
