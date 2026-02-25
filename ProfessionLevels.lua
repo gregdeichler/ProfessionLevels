@@ -204,7 +204,7 @@ minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
 
 minimapBtn:SetScript("OnClick", function(self, button)
-    if button == "RightButton" then
+    if IsShiftKeyDown() then
         if settings.showPrimary and settings.showSecondary then
             selectedMode = 1
         elseif settings.showPrimary then
@@ -236,8 +236,8 @@ end)
 minimapBtn:SetScript("OnEnter", function()
     GameTooltip:SetOwner(minimapBtn, "ANCHOR_LEFT")
     GameTooltip:SetText("Profession Levels")
-    GameTooltip:AddLine("Left Click: Toggle Frame", 1, 1, 1)
-    GameTooltip:AddLine("Right Click: Settings", 1, 1, 1)
+    GameTooltip:AddLine("Click: Toggle Frame", 1, 1, 1)
+    GameTooltip:AddLine("Shift+Click: Settings", 1, 1, 1)
     GameTooltip:Show()
 end)
 
