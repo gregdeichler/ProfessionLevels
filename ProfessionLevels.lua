@@ -1,18 +1,16 @@
 -- =====================================================
--- Profession Levels 2.2 (Cosmetic Improved)
--- Same logic as working 2.2
--- Added:
+-- Profession Levels 2.2 (Cosmetic Final)
+-- Fixes:
 --   • Left padding
---   • Better internal spacing
---   • No content clipping
---   • Safer minimum width
+--   • Bottom clipping
+--   • RIGHT clipping (final fix)
 -- =====================================================
 
 local PL = CreateFrame("Frame", "ProfessionLevelsFrame", UIParent)
-PL:SetWidth(320)
+PL:SetWidth(340)
 PL:SetHeight(180)
 PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-PL:SetMinResize(260, 120)
+PL:SetMinResize(280, 120)
 PL:SetClampedToScreen(true)
 PL:EnableMouse(true)
 PL:SetMovable(true)
@@ -28,24 +26,20 @@ PL:SetBackdrop({
     insets = { left = 8, right = 8, top = 8, bottom = 8 }
 })
 
--- =====================================================
--- Saved Variables
--- =====================================================
-
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 ProfessionLevelsDB.locked = ProfessionLevelsDB.locked or false
 ProfessionLevelsDB.compact = ProfessionLevelsDB.compact or false
 
 -- =====================================================
--- Scroll Setup (More Padding)
+-- Scroll Setup (More Internal Padding)
 -- =====================================================
 
 local ScrollFrame = CreateFrame("ScrollFrame", nil, PL)
-ScrollFrame:SetPoint("TOPLEFT", 16, -16)
-ScrollFrame:SetPoint("BOTTOMRIGHT", -32, 16)
+ScrollFrame:SetPoint("TOPLEFT", 18, -18)
+ScrollFrame:SetPoint("BOTTOMRIGHT", -40, 18)
 
 local Content = CreateFrame("Frame", nil, ScrollFrame)
-Content:SetWidth(PL:GetWidth() - 60)
+Content:SetWidth(PL:GetWidth() - 80)
 Content:SetHeight(1)
 ScrollFrame:SetScrollChild(Content)
 
@@ -70,7 +64,7 @@ local function GetSpellIcon(skillName)
 end
 
 -- =====================================================
--- Row Creation (Left Padding Added)
+-- Row Creation
 -- =====================================================
 
 local function CreateRow(index)
@@ -81,8 +75,8 @@ local function CreateRow(index)
 
     local row = CreateFrame("Frame", nil, Content)
     row:SetHeight(rowHeight)
-    row:SetPoint("TOPLEFT", 8, -((index - 1) * (rowHeight + 4)))
-    row:SetPoint("RIGHT", Content, "RIGHT", -8, 0)
+    row:SetPoint("TOPLEFT", 10, -((index - 1) * (rowHeight + 4)))
+    row:SetPoint("RIGHT", Content, "RIGHT", -12, 0)
 
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetWidth(compact and 0 or 16)
@@ -94,7 +88,7 @@ local function CreateRow(index)
     row.name:SetPoint("LEFT", row.icon, "RIGHT", compact and 0 or 6, 0)
 
     row.value = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.value:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+    row.value:SetPoint("RIGHT", row, "RIGHT", -8, 0)
 
     row.bar = CreateFrame("StatusBar", nil, row)
     row.bar:SetFrameLevel(row:GetFrameLevel() - 1)
@@ -119,20 +113,20 @@ local function ClearRows()
 end
 
 -- =====================================================
--- Update Function (UNCHANGED LOGIC)
+-- Update Function (Original Logic Preserved)
 -- =====================================================
 
 local function UpdateProfessions()
 
     ClearRows()
-    Content:SetWidth(PL:GetWidth() - 60)
+
+    Content:SetWidth(PL:GetWidth() - 80)
 
     local index = 1
     local contentHeight = 0
     local rowSpacing = ProfessionLevelsDB.compact and 18 or 30
     local inSection = false
 
-    -- Expand headers
     for i = 1, GetNumSkillLines() do
         local name, isHeader, isExpanded = GetSkillLineInfo(i)
         if isHeader and not isExpanded then
@@ -182,14 +176,19 @@ local function UpdateProfessions()
     end
 
     Content:SetHeight(math.max(contentHeight, ScrollFrame:GetHeight()))
-    Content:SetWidth(PL:GetWidth() - 60)
+    Content:SetWidth(PL:GetWidth() - 80)
 
     local minHeight = contentHeight + 40
     if PL:GetHeight() < minHeight then
         PL:SetHeight(minHeight)
     end
-    PL:SetMinResize(260, minHeight)
+    PL:SetMinResize(280, minHeight)
 end
+
+-- Resize sync (important)
+PL:SetScript("OnSizeChanged", function()
+    UpdateProfessions()
+end)
 
 -- =====================================================
 -- Slash Commands
@@ -213,16 +212,12 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "reset" then
         ProfessionLevelsDB.compact = false
         ProfessionLevelsDB.locked = false
-        PL:SetWidth(320)
+        PL:SetWidth(340)
         PL:SetHeight(180)
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         UpdateProfessions()
     end
 end
-
--- =====================================================
--- Drag & Resize
--- =====================================================
 
 PL:SetScript("OnDragStart", function()
     if not ProfessionLevelsDB.locked then this:StartMoving() end
@@ -244,10 +239,6 @@ end)
 resize:SetScript("OnMouseUp", function()
     PL:StopMovingOrSizing()
 end)
-
--- =====================================================
--- Events
--- =====================================================
 
 PL:RegisterEvent("PLAYER_LOGIN")
 PL:RegisterEvent("SKILL_LINES_CHANGED")
