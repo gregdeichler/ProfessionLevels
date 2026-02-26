@@ -72,6 +72,7 @@ end
 local settings = GetCharSettings()
 
 local minimapBtn
+local minimapIcon
 
 -- =====================================================
 -- Options Frame
@@ -192,14 +193,14 @@ end)
 -- Minimap Button
 -- =====================================================
 
-local minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
+minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
 minimapBtn:SetWidth(31)
 minimapBtn:SetHeight(31)
 minimapBtn:SetFrameStrata("MEDIUM")
 minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
-local minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
+minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
 minimapIcon:SetWidth(20)
 minimapIcon:SetHeight(20)
 minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
