@@ -201,7 +201,9 @@ minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 local btnBg = minimapBtn:CreateTexture(nil, "BACKGROUND")
-btnBg:SetAllPoints()
+btnBg:SetWidth(40)
+btnBg:SetHeight(40)
+btnBg:SetPoint("CENTER", 0, 0)
 btnBg:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
 
 minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
@@ -211,7 +213,9 @@ minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
 
 local btnBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
-btnBorder:SetAllPoints()
+btnBorder:SetWidth(53)
+btnBorder:SetHeight(53)
+btnBorder:SetPoint("CENTER", 0, 0)
 btnBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 
 minimapBtn.icon = minimapIcon
