@@ -1,5 +1,5 @@
 -- =====================================================
--- Profession Levels 2.5
+-- Profession Levels 2.6
 -- A profession tracking addon for Turtle WoW
 -- 
 -- Features:
@@ -9,6 +9,8 @@
 --   - Primary/Secondary profession filtering
 --   - Compact and Normal display modes
 --   - Minimap button for quick access
+--   - Hover highlights on rows
+--   - Enhanced progress bar styling
 --
 -- Commands:
 --   /pl config   - Open preferences menu
@@ -22,8 +24,8 @@
 --   /pl reset   - Reset all settings
 --
 -- Minimap Button:
---   Left Click:  Toggle main frame
---   Right Click: Open settings
+--   Click:       Toggle main frame
+--   Shift+Click: Open settings
 --   Drag:       Reposition button
 --
 -- Author: gregdeichler
