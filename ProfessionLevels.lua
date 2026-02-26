@@ -194,8 +194,8 @@ end)
 -- =====================================================
 
 minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
-minimapBtn:SetWidth(53)
-minimapBtn:SetHeight(53)
+minimapBtn:SetWidth(31)
+minimapBtn:SetHeight(31)
 minimapBtn:SetFrameStrata("MEDIUM")
 minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -207,7 +207,9 @@ minimapIcon:SetTexture("Interface\\Icons\\Trade_Engineering")
 minimapIcon:SetPoint("CENTER", 0, 0)
 
 local btnBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
-btnBorder:SetAllPoints()
+btnBorder:SetWidth(53)
+btnBorder:SetHeight(53)
+btnBorder:SetPoint("CENTER", 8, -8)
 btnBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 
 minimapBtn.icon = minimapIcon
