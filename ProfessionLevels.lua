@@ -316,6 +316,21 @@ local function SetupRowLayout(row, index)
     row:SetPoint("TOPLEFT", 8, -((index - 1) * (rowHeight + 4)))
     row:SetPoint("RIGHT", Content, "RIGHT", -8, 0)
 
+    if not row.highlight then
+        row.highlight = row:CreateTexture(nil, "BACKGROUND")
+        row.highlight:SetAllPoints()
+        row.highlight:SetTexture(0.3, 0.5, 0.8, 0.2)
+        row.highlight:Hide()
+    end
+
+    row:EnableMouse(true)
+    row:SetScript("OnEnter", function()
+        row.highlight:Show()
+    end)
+    row:SetScript("OnLeave", function()
+        row.highlight:Hide()
+    end)
+
     if not row.icon then
         row.icon = row:CreateTexture(nil, "ARTWORK")
     end
