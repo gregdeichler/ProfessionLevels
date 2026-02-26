@@ -209,7 +209,7 @@ minimapIcon:SetPoint("CENTER", 0, 0)
 local btnBorder = minimapBtn:CreateTexture(nil, "OVERLAY")
 btnBorder:SetWidth(53)
 btnBorder:SetHeight(53)
-btnBorder:SetPoint("CENTER", 8, -8)
+btnBorder:SetPoint("CENTER", 10, -10)
 btnBorder:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 
 minimapBtn.icon = minimapIcon
