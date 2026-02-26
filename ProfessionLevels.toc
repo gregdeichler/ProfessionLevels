@@ -1,10 +1,9 @@
 ## Interface: 11200
-## Title: Profession Levels
-## Notes: A profession tracking addon for Turtle WoW with per-character settings and display preferences.
+## Title: |cffff9f1aProfession Levels
+## Notes: A profession tracking addon for Turtle WoW with per-character settings, display preferences, and minimap button.
 ## Author: gregdeichler
 ## Version: 2.6
 ## SavedVariables: ProfessionLevelsDB
 
 
 ProfessionLevels.lua
-
