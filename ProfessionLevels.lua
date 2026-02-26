@@ -331,9 +331,16 @@ local function SetupRowLayout(row, index)
     if not row.bar then
         row.bar = CreateFrame("StatusBar", nil, row)
         row.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+        
         row.bar.bg = row.bar:CreateTexture(nil, "BACKGROUND")
         row.bar.bg:SetAllPoints()
         row.bar.bg:SetTexture(0, 0, 0, 0.5)
+        
+        row.bar.border = row.bar:CreateTexture(nil, "BORDER")
+        row.bar.border:SetWidth(1)
+        row.bar.border:SetPoint("TOPLEFT", -1, 1)
+        row.bar.border:SetPoint("BOTTOMRIGHT", 1, -1)
+        row.bar.border:SetTexture(1, 1, 1, 0.3)
     end
 
     row.name:SetFontObject(font)
@@ -429,9 +436,9 @@ function UpdateProfessions()
                 row.bar:SetValue(rank)
 
                 if rank == maxRank then
-                    row.bar:SetStatusBarColor(0.2, 0.8, 0.2)
+                    row.bar:SetStatusBarColor(0.2, 0.75, 0.2)
                 else
-                    row.bar:SetStatusBarColor(0.9, 0.7, 0.1)
+                    row.bar:SetStatusBarColor(0.85, 0.65, 0.13)
                 end
             end
 
