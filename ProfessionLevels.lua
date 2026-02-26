@@ -334,13 +334,7 @@ local function SetupRowLayout(row, index)
         
         row.bar.bg = row.bar:CreateTexture(nil, "BACKGROUND")
         row.bar.bg:SetAllPoints()
-        row.bar.bg:SetTexture(0, 0, 0, 0.5)
-        
-        row.bar.border = row.bar:CreateTexture(nil, "BORDER")
-        row.bar.border:SetWidth(1)
-        row.bar.border:SetPoint("TOPLEFT", -1, 1)
-        row.bar.border:SetPoint("BOTTOMRIGHT", 1, -1)
-        row.bar.border:SetTexture(1, 1, 1, 0.3)
+        row.bar.bg:SetTexture(0, 0, 0, 0.2)
     end
 
     row.name:SetFontObject(font)
