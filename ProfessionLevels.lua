@@ -66,6 +66,7 @@ local function GetCharSettings()
             showSecondary = true,
             showMinimap = true,
             minimapIcon = "Trade_Engineering",
+            enabledProfessions = nil,
         }
     end
     return ProfessionLevelsDB[charKey]
@@ -81,8 +82,8 @@ local minimapIcon
 -- =====================================================
 
 local OptionsFrame = CreateFrame("Frame", "ProfessionLevelsOptions")
-OptionsFrame:SetWidth(240)
-OptionsFrame:SetHeight(200)
+OptionsFrame:SetWidth(280)
+OptionsFrame:SetHeight(350)
 OptionsFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 OptionsFrame:SetFrameStrata("DIALOG")
 OptionsFrame:Hide()
@@ -98,54 +99,7 @@ OptionsFrame:SetBackdrop({
 
 local optionsTitle = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 optionsTitle:SetPoint("TOP", OptionsFrame, "TOP", 0, -12)
-optionsTitle:SetText("Preferences")
-
-local function CreateRadioButton(name, parent, label, yOffset)
-    local rb = CreateFrame("CheckButton", name, parent, "UIRadioButtonTemplate")
-    rb:SetPoint("TOPLEFT", 20, yOffset)
-    
-    local text = rb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    text:SetPoint("LEFT", rb, "RIGHT", 4, 0)
-    text:SetText(label)
-    
-    return rb
-end
-
-local radioBoth = CreateRadioButton("PLRadioBoth", OptionsFrame, "Show Both", -35)
-local radioPrimary = CreateRadioButton("PLRadioPrimary", OptionsFrame, "Primary Only", -55)
-local radioSecondary = CreateRadioButton("PLRadioSecondary", OptionsFrame, "Secondary Only", -75)
-
-local selectedMode = 1
-
-local function UpdateRadioSelection()
-    radioBoth:SetChecked(selectedMode == 1)
-    radioPrimary:SetChecked(selectedMode == 2)
-    radioSecondary:SetChecked(selectedMode == 3)
-end
-
-radioBoth:SetScript("OnClick", function()
-    selectedMode = 1
-    settings.showPrimary = true
-    settings.showSecondary = true
-    UpdateRadioSelection()
-    UpdateProfessions()
-end)
-
-radioPrimary:SetScript("OnClick", function()
-    selectedMode = 2
-    settings.showPrimary = true
-    settings.showSecondary = false
-    UpdateRadioSelection()
-    UpdateProfessions()
-end)
-
-radioSecondary:SetScript("OnClick", function()
-    selectedMode = 3
-    settings.showPrimary = false
-    settings.showSecondary = true
-    UpdateRadioSelection()
-    UpdateProfessions()
-end)
+optionsTitle:SetText("Profession Settings")
 
 local closeBtn = CreateFrame("Button", nil, OptionsFrame, "UIPanelCloseButton")
 closeBtn:SetPoint("TOPRIGHT", OptionsFrame, "TOPRIGHT", -4, -4)
@@ -153,43 +107,115 @@ closeBtn:SetScript("OnClick", function()
     OptionsFrame:Hide()
 end)
 
-local toggleCompact = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleCompact:SetPoint("TOPLEFT", 20, -105)
-toggleCompact.text = toggleCompact:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-toggleCompact.text:SetPoint("LEFT", toggleCompact, "RIGHT", 4, 0)
-toggleCompact.text:SetText("Compact Mode")
-toggleCompact:SetChecked(settings.compact)
-toggleCompact:SetScript("OnClick", function()
-    settings.compact = toggleCompact:GetChecked()
-    UpdateProfessions()
-end)
+local professionCheckboxes = {}
 
-local toggleLock = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleLock:SetPoint("TOPLEFT", 20, -130)
-toggleLock.text = toggleLock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-toggleLock.text:SetPoint("LEFT", toggleLock, "RIGHT", 4, 0)
-toggleLock.text:SetText("Lock Frame")
-toggleLock:SetChecked(settings.locked)
-toggleLock:SetScript("OnClick", function()
-    settings.locked = toggleLock:GetChecked()
-end)
-
-local toggleMinimap = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-toggleMinimap:SetPoint("TOPLEFT", 20, -155)
-toggleMinimap.text = toggleMinimap:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-toggleMinimap.text:SetPoint("LEFT", toggleMinimap, "RIGHT", 4, 0)
-toggleMinimap.text:SetText("Show Minimap Button")
-toggleMinimap:SetChecked(settings.showMinimap)
-toggleMinimap:SetScript("OnClick", function()
-    settings.showMinimap = toggleMinimap:GetChecked()
-    if minimapBtn then
-        if settings.showMinimap then
-            minimapBtn:Show()
-        else
-            minimapBtn:Hide()
+local function GetAllProfessions()
+    local profs = {}
+    local inProfessions = false
+    
+    for i = 1, GetNumSkillLines() do
+        local name, isHeader = GetSkillLineInfo(i)
+        if isHeader then
+            if name == "Professions" then
+                inProfessions = true
+            elseif name == "Secondary Skills" then
+                inProfessions = true
+            else
+                inProfessions = false
+            end
+        elseif inProfessions and name then
+            table.insert(profs, name)
         end
     end
-end)
+    
+    local _, class = UnitClass("player")
+    if class == "ROGUE" then
+        table.insert(profs, "Lockpicking")
+    end
+    
+    return profs
+end
+
+local function CreateProfessionCheckboxes()
+    for _, cb in pairs(professionCheckboxes) do
+        cb:Hide()
+    end
+    
+    local profs = GetAllProfessions()
+    local yOffset = -35
+    
+    for _, profName in ipairs(profs) do
+        local professionName = profName
+        if not professionCheckboxes[professionName] then
+            local cb = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+            cb.text = cb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            cb.text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+            cb.text:SetText(professionName)
+            cb:SetPoint("TOPLEFT", 20, yOffset)
+            cb:SetScript("OnClick", function()
+                settings.enabledProfessions = settings.enabledProfessions or {}
+                local isChecked = cb:GetChecked() and true or false
+                settings.enabledProfessions[professionName] = isChecked
+                UpdateProfessions()
+            end)
+            professionCheckboxes[professionName] = cb
+        end
+        
+        local cb = professionCheckboxes[professionName]
+        if settings.enabledProfessions and settings.enabledProfessions[professionName] == false then
+            cb:SetChecked(false)
+        else
+            cb:SetChecked(true)
+        end
+        cb:Show()
+        
+        yOffset = yOffset - 22
+    end
+    
+    local bottomCheckboxesEnd = yOffset - 10
+    
+    local divider = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    divider:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd)
+    divider:SetText("Display Options")
+    
+    local toggleCompact = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleCompact:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 25)
+    toggleCompact.text = toggleCompact:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleCompact.text:SetPoint("LEFT", toggleCompact, "RIGHT", 4, 0)
+    toggleCompact.text:SetText("Compact Mode")
+    toggleCompact:SetChecked(settings.compact)
+    toggleCompact:SetScript("OnClick", function()
+        settings.compact = toggleCompact:GetChecked()
+        UpdateProfessions()
+    end)
+
+    local toggleLock = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleLock:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 50)
+    toggleLock.text = toggleLock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleLock.text:SetPoint("LEFT", toggleLock, "RIGHT", 4, 0)
+    toggleLock.text:SetText("Lock Frame")
+    toggleLock:SetChecked(settings.locked)
+    toggleLock:SetScript("OnClick", function()
+        settings.locked = toggleLock:GetChecked()
+    end)
+
+    local toggleMinimap = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleMinimap:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 75)
+    toggleMinimap.text = toggleMinimap:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleMinimap.text:SetPoint("LEFT", toggleMinimap, "RIGHT", 4, 0)
+    toggleMinimap.text:SetText("Show Minimap Button")
+    toggleMinimap:SetChecked(settings.showMinimap)
+    toggleMinimap:SetScript("OnClick", function()
+        settings.showMinimap = toggleMinimap:GetChecked()
+        if minimapBtn then
+            if settings.showMinimap then
+                minimapBtn:Show()
+            else
+                minimapBtn:Hide()
+            end
+        end
+    end)
+end
 
 -- =====================================================
 -- Minimap Button
@@ -218,16 +244,7 @@ minimapBtn.icon = minimapIcon
 
 minimapBtn:SetScript("OnClick", function(self, button)
     if IsShiftKeyDown() then
-        if settings.showPrimary and settings.showSecondary then
-            selectedMode = 1
-        elseif settings.showPrimary then
-            selectedMode = 2
-        else
-            selectedMode = 3
-        end
-        UpdateRadioSelection()
-        toggleCompact:SetChecked(settings.compact)
-        toggleLock:SetChecked(settings.locked)
+        CreateProfessionCheckboxes()
         OptionsFrame:Show()
     else
         if PL:IsVisible() then
@@ -414,7 +431,7 @@ function UpdateProfessions()
 
     local index = 1
     local contentHeight = 0
-    local rowSpacing = compact and 18 or 30
+    local rowSpacing = compact and 20 or 30
 
     for i = 1, GetNumSkillLines() do
         local name, isHeader, isExpanded = GetSkillLineInfo(i)
@@ -423,44 +440,83 @@ function UpdateProfessions()
         end
     end
 
-    local showPrimary = settings.showPrimary
-    local showSecondary = settings.showSecondary
-
     for i = 1, GetNumSkillLines() do
         local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
 
         if isHeader then
-            if name == "Professions" then
-                PL.currentSection = showPrimary and "primary" or nil
-            elseif name == "Secondary Skills" then
-                PL.currentSection = showSecondary and "secondary" or nil
+            if name == "Professions" or name == "Secondary Skills" then
+                PL.currentSection = name
             else
                 PL.currentSection = nil
             end
 
         elseif PL.currentSection and rank and maxRank and maxRank > 0 then
-
-            local row = PL.rows[index] or CreateRow(index)
-            SetupRowLayout(row, index)
-            row:Show()
-
-            row.name:SetText(name)
-            row.value:SetText(rank.."/"..maxRank)
-
-            if not compact then
-                row.icon:SetTexture(GetSpellIcon(name))
-                row.bar:SetMinMaxValues(0, maxRank)
-                row.bar:SetValue(rank)
-
-                if rank == maxRank then
-                    row.bar:SetStatusBarColor(0.2, 0.75, 0.2)
-                else
-                    row.bar:SetStatusBarColor(0.85, 0.65, 0.13)
-                end
+            local showProfession = true
+            if settings.enabledProfessions and settings.enabledProfessions[name] == false then
+                showProfession = false
             end
+            
+            if showProfession then
+                local row = PL.rows[index] or CreateRow(index)
+                SetupRowLayout(row, index)
+                row:Show()
 
-            index = index + 1
-            contentHeight = contentHeight + rowSpacing
+                row.name:SetText(name)
+                row.value:SetText(rank.."/"..maxRank)
+
+                if not compact then
+                    row.icon:SetTexture(GetSpellIcon(name))
+                    row.bar:SetMinMaxValues(0, maxRank)
+                    row.bar:SetValue(rank)
+
+                    if rank == maxRank then
+                        row.bar:SetStatusBarColor(0.2, 0.75, 0.2)
+                    else
+                        row.bar:SetStatusBarColor(0.85, 0.65, 0.13)
+                    end
+                end
+
+                index = index + 1
+                contentHeight = contentHeight + rowSpacing
+            end
+        end
+    end
+    
+    local _, class = UnitClass("player")
+    if class == "ROGUE" then
+        for i = 1, GetNumSkillLines() do
+            local name, _, _, rank, _, _, maxRank = GetSkillLineInfo(i)
+            if name == "Lockpicking" then
+                local showLockpicking = true
+                if settings.enabledProfessions and settings.enabledProfessions["Lockpicking"] == false then
+                    showLockpicking = false
+                end
+                
+                if showLockpicking then
+                    local row = PL.rows[index] or CreateRow(index)
+                    SetupRowLayout(row, index)
+                    row:Show()
+
+                    row.name:SetText(name)
+                    row.value:SetText(rank .. "/" .. maxRank)
+
+                    if not compact then
+                        row.icon:SetTexture("Interface\\Icons\\INV_ThrowingKnife_04")
+                        row.bar:SetMinMaxValues(0, maxRank)
+                        row.bar:SetValue(rank)
+
+                        if rank == maxRank then
+                            row.bar:SetStatusBarColor(0.2, 0.75, 0.2)
+                        else
+                            row.bar:SetStatusBarColor(0.85, 0.65, 0.13)
+                        end
+                    end
+
+                    index = index + 1
+                    contentHeight = contentHeight + rowSpacing
+                end
+                break
+            end
         end
     end
 
@@ -491,38 +547,15 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     elseif msg == "reset" then
         settings.compact = false
         settings.locked = false
-        settings.showPrimary = true
-        settings.showSecondary = true
         settings.showMinimap = true
         settings.minimapIcon = "Trade_Engineering"
+        settings.enabledProfessions = nil
         PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         minimapBtn:Show()
         UpdateProfessions()
     elseif msg == "config" or msg == "options" or msg == "settings" then
-        if settings.showPrimary and settings.showSecondary then
-            selectedMode = 1
-        elseif settings.showPrimary then
-            selectedMode = 2
-        else
-            selectedMode = 3
-        end
-        UpdateRadioSelection()
-        toggleCompact:SetChecked(settings.compact)
-        toggleLock:SetChecked(settings.locked)
-        toggleMinimap:SetChecked(settings.showMinimap)
+        CreateProfessionCheckboxes()
         OptionsFrame:Show()
-    elseif msg == "primary" then
-        settings.showPrimary = true
-        settings.showSecondary = false
-        UpdateProfessions()
-    elseif msg == "secondary" then
-        settings.showPrimary = false
-        settings.showSecondary = true
-        UpdateProfessions()
-    elseif msg == "both" then
-        settings.showPrimary = true
-        settings.showSecondary = true
-        UpdateProfessions()
     end
 end
 
@@ -549,9 +582,10 @@ PL:SetScript("OnEvent", function()
         if minimapIcon then
             minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
         end
-        PL:Show()
     end
     UpdateProfessions()
+    PL:Show()
 end)
 
 PL:Show()
+UpdateProfessions()

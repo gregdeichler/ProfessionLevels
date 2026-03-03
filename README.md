@@ -11,13 +11,14 @@ Profession Levels is a World of Warcraft addon designed specifically for Turtle 
 - Track profession levels across your characters
 - Monitor profession progress in real-time
 - Per-character settings (position, display preferences, minimap button)
-- Primary/Secondary profession filtering (show both, primary only, or secondary only)
+- **Individual profession toggles** - enable/disable each profession separately via checkboxes
 - Compact and Normal display modes
 - Minimap button for quick access
 - Hover highlights on rows
 - Enhanced progress bar styling with vibrant colors
 - Movable and lockable frame
 - Preferences menu for easy configuration
+- Lockpicking support for Rogues
 
 ## Commands
 
@@ -28,16 +29,13 @@ Profession Levels is a World of Warcraft addon designed specifically for Turtle 
 | `/pl normal` | Switch to normal mode |
 | `/pl lock` | Lock frame position |
 | `/pl unlock` | Unlock frame position |
-| `/pl primary` | Show primary professions only |
-| `/pl secondary` | Show secondary skills only |
-| `/pl both` | Show both profession types |
 | `/pl reset` | Reset all settings |
 
 ## Minimap Button
 
-- **Click**: Toggle main frame visibility
-- **Shift+Click**: Open settings
-- **Drag**: Reposition button
+- **Click** - Toggle main frame visibility
+- **Shift+Click** - Open settings
+- **Drag** - Reposition button
 
 ## Installation
 
@@ -53,6 +51,7 @@ Once installed and enabled:
 2. Use the minimap button or `/pl config` to access settings
 3. Drag the frame to reposition it
 4. Monitor your profession levels as you level them up
+5. Use the checkboxes in preferences to show/hide specific professions
 
 ## Files
 
