@@ -1,5 +1,5 @@
 -- =====================================================
--- Profession Levels 2.6
+-- Profession Levels 2.8
 -- A profession tracking addon for Turtle WoW
 -- 
 -- Features:
@@ -31,8 +31,8 @@
 -- Author: gregdeichler
 -- =====================================================
 
-local NORMAL_WIDTH = 330
-local COMPACT_WIDTH = 200
+local NORMAL_WIDTH = 264
+local COMPACT_WIDTH = 160
 
 local playerName = UnitName("player")
 local realmName = GetRealmName()
@@ -76,6 +76,31 @@ local settings = GetCharSettings()
 
 local minimapBtn
 local minimapIcon
+local divider
+local togglePrimary
+local toggleSecondary
+local toggleCompact
+local toggleLock
+local toggleMinimap
+
+local function SavePoint(frame, key, point, relativeTo, relativePoint, xOfs, yOfs)
+    settings[key] = {
+        point = point,
+        relativePoint = relativePoint,
+        x = xOfs,
+        y = yOfs,
+    }
+end
+
+local function RestorePoint(frame, key, defaultPoint, defaultRelativeTo, defaultRelativePoint, defaultX, defaultY)
+    local savedPoint = settings[key]
+    frame:ClearAllPoints()
+    if savedPoint then
+        frame:SetPoint(savedPoint.point, defaultRelativeTo, savedPoint.relativePoint, savedPoint.x, savedPoint.y)
+    else
+        frame:SetPoint(defaultPoint, defaultRelativeTo, defaultRelativePoint, defaultX, defaultY)
+    end
+end
 
 -- =====================================================
 -- Options Frame
@@ -136,14 +161,91 @@ local function GetAllProfessions()
     return profs
 end
 
+local function RefreshDisplayCheckboxes()
+    if togglePrimary then
+        togglePrimary:SetChecked(settings.showPrimary)
+    end
+    if toggleSecondary then
+        toggleSecondary:SetChecked(settings.showSecondary)
+    end
+    if toggleCompact then
+        toggleCompact:SetChecked(settings.compact)
+    end
+    if toggleLock then
+        toggleLock:SetChecked(settings.locked)
+    end
+    if toggleMinimap then
+        toggleMinimap:SetChecked(settings.showMinimap)
+    end
+end
+
+local function CreateDisplayControls()
+    if divider then
+        return
+    end
+
+    divider = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    divider:SetText("Display Options")
+
+    togglePrimary = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    togglePrimary.text = togglePrimary:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    togglePrimary.text:SetPoint("LEFT", togglePrimary, "RIGHT", 4, 0)
+    togglePrimary.text:SetText("Show Primary Professions")
+    togglePrimary:SetScript("OnClick", function()
+        settings.showPrimary = togglePrimary:GetChecked() and true or false
+        UpdateProfessions()
+    end)
+
+    toggleSecondary = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleSecondary.text = toggleSecondary:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleSecondary.text:SetPoint("LEFT", toggleSecondary, "RIGHT", 4, 0)
+    toggleSecondary.text:SetText("Show Secondary Skills")
+    toggleSecondary:SetScript("OnClick", function()
+        settings.showSecondary = toggleSecondary:GetChecked() and true or false
+        UpdateProfessions()
+    end)
+
+    toggleCompact = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleCompact.text = toggleCompact:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleCompact.text:SetPoint("LEFT", toggleCompact, "RIGHT", 4, 0)
+    toggleCompact.text:SetText("Compact Mode")
+    toggleCompact:SetScript("OnClick", function()
+        settings.compact = toggleCompact:GetChecked() and true or false
+        UpdateProfessions()
+    end)
+
+    toggleLock = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleLock.text = toggleLock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleLock.text:SetPoint("LEFT", toggleLock, "RIGHT", 4, 0)
+    toggleLock.text:SetText("Lock Frame")
+    toggleLock:SetScript("OnClick", function()
+        settings.locked = toggleLock:GetChecked() and true or false
+    end)
+
+    toggleMinimap = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleMinimap.text = toggleMinimap:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleMinimap.text:SetPoint("LEFT", toggleMinimap, "RIGHT", 4, 0)
+    toggleMinimap.text:SetText("Show Minimap Button")
+    toggleMinimap:SetScript("OnClick", function()
+        settings.showMinimap = toggleMinimap:GetChecked() and true or false
+        if minimapBtn then
+            if settings.showMinimap then
+                minimapBtn:Show()
+            else
+                minimapBtn:Hide()
+            end
+        end
+    end)
+end
+
 local function CreateProfessionCheckboxes()
     for _, cb in pairs(professionCheckboxes) do
         cb:Hide()
     end
-    
+
     local profs = GetAllProfessions()
     local yOffset = -35
-    
+
     for _, profName in ipairs(profs) do
         local professionName = profName
         if not professionCheckboxes[professionName] then
@@ -160,8 +262,10 @@ local function CreateProfessionCheckboxes()
             end)
             professionCheckboxes[professionName] = cb
         end
-        
+
         local cb = professionCheckboxes[professionName]
+        cb:ClearAllPoints()
+        cb:SetPoint("TOPLEFT", 20, yOffset)
         if settings.enabledProfessions and settings.enabledProfessions[professionName] == false then
             cb:SetChecked(false)
         else
@@ -171,50 +275,32 @@ local function CreateProfessionCheckboxes()
         
         yOffset = yOffset - 22
     end
-    
+
     local bottomCheckboxesEnd = yOffset - 10
-    
-    local divider = OptionsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+
+    CreateDisplayControls()
+
+    divider:ClearAllPoints()
     divider:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd)
-    divider:SetText("Display Options")
-    
-    local toggleCompact = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-    toggleCompact:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 25)
-    toggleCompact.text = toggleCompact:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    toggleCompact.text:SetPoint("LEFT", toggleCompact, "RIGHT", 4, 0)
-    toggleCompact.text:SetText("Compact Mode")
-    toggleCompact:SetChecked(settings.compact)
-    toggleCompact:SetScript("OnClick", function()
-        settings.compact = toggleCompact:GetChecked()
-        UpdateProfessions()
-    end)
 
-    local toggleLock = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-    toggleLock:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 50)
-    toggleLock.text = toggleLock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    toggleLock.text:SetPoint("LEFT", toggleLock, "RIGHT", 4, 0)
-    toggleLock.text:SetText("Lock Frame")
-    toggleLock:SetChecked(settings.locked)
-    toggleLock:SetScript("OnClick", function()
-        settings.locked = toggleLock:GetChecked()
-    end)
+    togglePrimary:ClearAllPoints()
+    togglePrimary:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 25)
 
-    local toggleMinimap = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
-    toggleMinimap:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 75)
-    toggleMinimap.text = toggleMinimap:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    toggleMinimap.text:SetPoint("LEFT", toggleMinimap, "RIGHT", 4, 0)
-    toggleMinimap.text:SetText("Show Minimap Button")
-    toggleMinimap:SetChecked(settings.showMinimap)
-    toggleMinimap:SetScript("OnClick", function()
-        settings.showMinimap = toggleMinimap:GetChecked()
-        if minimapBtn then
-            if settings.showMinimap then
-                minimapBtn:Show()
-            else
-                minimapBtn:Hide()
-            end
-        end
-    end)
+    toggleSecondary:ClearAllPoints()
+    toggleSecondary:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 50)
+
+    toggleCompact:ClearAllPoints()
+    toggleCompact:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 75)
+
+    toggleLock:ClearAllPoints()
+    toggleLock:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 100)
+
+    toggleMinimap:ClearAllPoints()
+    toggleMinimap:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 125)
+
+    RefreshDisplayCheckboxes()
+
+    OptionsFrame:SetHeight(math.max(350, 185 - bottomCheckboxesEnd))
 end
 
 -- =====================================================
@@ -225,7 +311,8 @@ minimapBtn = CreateFrame("Button", "ProfessionLevelsMinimapBtn", Minimap)
 minimapBtn:SetWidth(31)
 minimapBtn:SetHeight(31)
 minimapBtn:SetFrameStrata("MEDIUM")
-minimapBtn:SetPoint("TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
+minimapBtn:SetMovable(true)
+minimapBtn:RegisterForDrag("LeftButton")
 minimapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 minimapIcon = minimapBtn:CreateTexture(nil, "ARTWORK")
@@ -261,6 +348,8 @@ end)
 
 minimapBtn:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
+    local point, _, relativePoint, xOfs, yOfs = self:GetPoint()
+    SavePoint(self, "minimapPosition", point, Minimap, relativePoint, xOfs, yOfs)
 end)
 
 minimapBtn:SetScript("OnEnter", function()
@@ -332,14 +421,14 @@ end
 local function SetupRowLayout(row, index)
 
     local compact = settings.compact
-    local rowHeight = compact and 16 or 26
+    local rowHeight = compact and 13 or 21
     local barHeight = compact and 0 or 12
     local font = compact and "GameFontHighlightSmall" or "GameFontNormal"
 
     row:SetHeight(rowHeight)
     row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", 8, -((index - 1) * (rowHeight + 4)))
-    row:SetPoint("RIGHT", Content, "RIGHT", -8, 0)
+    row:SetPoint("TOPLEFT", 6, -((index - 1) * (rowHeight + 3)))
+    row:SetPoint("RIGHT", Content, "RIGHT", -6, 0)
 
     if not row.highlight then
         row.highlight = row:CreateTexture(nil, "BACKGROUND")
@@ -384,27 +473,27 @@ local function SetupRowLayout(row, index)
         row.bar:Hide()
 
         row.name:ClearAllPoints()
-        row.name:SetPoint("LEFT", row, "LEFT", 4, 0)
+        row.name:SetPoint("LEFT", row, "LEFT", 3, 0)
 
         row.value:ClearAllPoints()
-        row.value:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+        row.value:SetPoint("RIGHT", row, "RIGHT", -3, 0)
 
     else
-        row.icon:SetWidth(16)
-        row.icon:SetHeight(16)
+        row.icon:SetWidth(14)
+        row.icon:SetHeight(14)
         row.icon:SetPoint("LEFT", 2, 0)
         row.icon:Show()
 
         row.name:ClearAllPoints()
-        row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+        row.name:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
 
         row.value:ClearAllPoints()
-        row.value:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+        row.value:SetPoint("RIGHT", row, "RIGHT", -4, 0)
 
         row.bar:SetHeight(barHeight)
         row.bar:ClearAllPoints()
-        row.bar:SetPoint("LEFT", row.name, "RIGHT", 6, 0)
-        row.bar:SetPoint("RIGHT", row.value, "LEFT", -6, 0)
+        row.bar:SetPoint("LEFT", row.name, "RIGHT", 4, 0)
+        row.bar:SetPoint("RIGHT", row.value, "LEFT", -4, 0)
         row.bar:Show()
     end
 end
@@ -431,7 +520,7 @@ function UpdateProfessions()
 
     local index = 1
     local contentHeight = 0
-    local rowSpacing = compact and 20 or 30
+    local rowSpacing = compact and 16 or 24
 
     for i = 1, GetNumSkillLines() do
         local name, isHeader, isExpanded = GetSkillLineInfo(i)
@@ -452,6 +541,11 @@ function UpdateProfessions()
 
         elseif PL.currentSection and rank and maxRank and maxRank > 0 then
             local showProfession = true
+            if PL.currentSection == "Professions" and not settings.showPrimary then
+                showProfession = false
+            elseif PL.currentSection == "Secondary Skills" and not settings.showSecondary then
+                showProfession = false
+            end
             if settings.enabledProfessions and settings.enabledProfessions[name] == false then
                 showProfession = false
             end
@@ -521,7 +615,7 @@ function UpdateProfessions()
     end
 
     Content:SetHeight(contentHeight)
-    PL:SetHeight(contentHeight + 40)
+    PL:SetHeight(contentHeight + 34)
 end
 
 -- =====================================================
@@ -542,16 +636,39 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         UpdateProfessions()
     elseif msg == "lock" then
         settings.locked = true
+        RefreshDisplayCheckboxes()
     elseif msg == "unlock" then
         settings.locked = false
+        RefreshDisplayCheckboxes()
+    elseif msg == "primary" then
+        settings.showPrimary = true
+        settings.showSecondary = false
+        RefreshDisplayCheckboxes()
+        UpdateProfessions()
+    elseif msg == "secondary" then
+        settings.showPrimary = false
+        settings.showSecondary = true
+        RefreshDisplayCheckboxes()
+        UpdateProfessions()
+    elseif msg == "both" then
+        settings.showPrimary = true
+        settings.showSecondary = true
+        RefreshDisplayCheckboxes()
+        UpdateProfessions()
     elseif msg == "reset" then
         settings.compact = false
         settings.locked = false
+        settings.showPrimary = true
+        settings.showSecondary = true
         settings.showMinimap = true
         settings.minimapIcon = "Trade_Engineering"
         settings.enabledProfessions = nil
-        PL:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        settings.framePosition = nil
+        settings.minimapPosition = nil
+        RestorePoint(PL, "framePosition", "CENTER", UIParent, "CENTER", 0, 0)
+        RestorePoint(minimapBtn, "minimapPosition", "TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
         minimapBtn:Show()
+        RefreshDisplayCheckboxes()
         UpdateProfessions()
     elseif msg == "config" or msg == "options" or msg == "settings" then
         CreateProfessionCheckboxes()
@@ -565,6 +682,8 @@ end)
 
 PL:SetScript("OnDragStop", function()
     this:StopMovingOrSizing()
+    local point, _, relativePoint, xOfs, yOfs = this:GetPoint()
+    SavePoint(this, "framePosition", point, UIParent, relativePoint, xOfs, yOfs)
 end)
 
 PL:RegisterEvent("PLAYER_LOGIN")
@@ -572,6 +691,8 @@ PL:RegisterEvent("SKILL_LINES_CHANGED")
 
 PL:SetScript("OnEvent", function()
     if event == "PLAYER_LOGIN" then
+        RestorePoint(PL, "framePosition", "CENTER", UIParent, "CENTER", 0, 0)
+        RestorePoint(minimapBtn, "minimapPosition", "TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
         if minimapBtn then
             if settings.showMinimap then
                 minimapBtn:Show()
@@ -582,6 +703,7 @@ PL:SetScript("OnEvent", function()
         if minimapIcon then
             minimapIcon:SetTexture("Interface\\Icons\\" .. settings.minimapIcon)
         end
+        RefreshDisplayCheckboxes()
     end
     UpdateProfessions()
     PL:Show()
