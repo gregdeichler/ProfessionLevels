@@ -57,7 +57,10 @@ PL:SetBackdrop({
 
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 
+local settings
+
 local function GetCharSettings()
+    ProfessionLevelsDB = ProfessionLevelsDB or {}
     if not ProfessionLevelsDB[charKey] then
         ProfessionLevelsDB[charKey] = {
             locked = false,
@@ -72,7 +75,12 @@ local function GetCharSettings()
     return ProfessionLevelsDB[charKey]
 end
 
-local settings = GetCharSettings()
+local function EnsureSettings()
+    if not settings then
+        settings = GetCharSettings()
+    end
+    return settings
+end
 
 local minimapBtn
 local minimapIcon
@@ -84,6 +92,7 @@ local toggleLock
 local toggleMinimap
 
 local function SavePoint(frame, key, point, relativeTo, relativePoint, xOfs, yOfs)
+    EnsureSettings()
     settings[key] = {
         point = point,
         relativePoint = relativePoint,
@@ -93,6 +102,7 @@ local function SavePoint(frame, key, point, relativeTo, relativePoint, xOfs, yOf
 end
 
 local function RestorePoint(frame, key, defaultPoint, defaultRelativeTo, defaultRelativePoint, defaultX, defaultY)
+    EnsureSettings()
     local savedPoint = settings[key]
     frame:ClearAllPoints()
     if savedPoint then
@@ -162,6 +172,7 @@ local function GetAllProfessions()
 end
 
 local function RefreshDisplayCheckboxes()
+    EnsureSettings()
     if togglePrimary then
         togglePrimary:SetChecked(settings.showPrimary)
     end
@@ -239,6 +250,7 @@ local function CreateDisplayControls()
 end
 
 local function CreateProfessionCheckboxes()
+    EnsureSettings()
     for _, cb in pairs(professionCheckboxes) do
         cb:Hide()
     end
@@ -509,6 +521,7 @@ end
 -- =====================================================
 
 function UpdateProfessions()
+    EnsureSettings()
 
     ClearRows()
 
@@ -625,6 +638,7 @@ end
 SLASH_PROFESSIONLEVELS1 = "/pl"
 SLASH_PROFESSIONLEVELS2 = "/professionlevels"
 SlashCmdList["PROFESSIONLEVELS"] = function(arg)
+    EnsureSettings()
 
     local msg = string.lower(arg or "")
 
@@ -677,6 +691,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
 end
 
 PL:SetScript("OnDragStart", function()
+    EnsureSettings()
     if not settings.locked then this:StartMoving() end
 end)
 
@@ -686,10 +701,18 @@ PL:SetScript("OnDragStop", function()
     SavePoint(this, "framePosition", point, UIParent, relativePoint, xOfs, yOfs)
 end)
 
+PL:RegisterEvent("VARIABLES_LOADED")
 PL:RegisterEvent("PLAYER_LOGIN")
 PL:RegisterEvent("SKILL_LINES_CHANGED")
 
 PL:SetScript("OnEvent", function()
+    if event == "VARIABLES_LOADED" then
+        settings = GetCharSettings()
+        return
+    end
+
+    EnsureSettings()
+
     if event == "PLAYER_LOGIN" then
         RestorePoint(PL, "framePosition", "CENTER", UIParent, "CENTER", 0, 0)
         RestorePoint(minimapBtn, "minimapPosition", "TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
@@ -709,5 +732,4 @@ PL:SetScript("OnEvent", function()
     PL:Show()
 end)
 
-PL:Show()
-UpdateProfessions()
+PL:Hide()
