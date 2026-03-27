@@ -31,8 +31,8 @@
 -- Author: gregdeichler
 -- =====================================================
 
-local NORMAL_WIDTH = 264
-local COMPACT_WIDTH = 160
+local NORMAL_WIDTH = 300
+local COMPACT_WIDTH = 190
 
 local playerName = UnitName("player")
 local realmName = GetRealmName()
@@ -58,6 +58,7 @@ PL:SetBackdrop({
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 
 local settings
+local sessionStartRanks = {}
 
 local function GetCharSettings()
     ProfessionLevelsDB = ProfessionLevelsDB or {}
@@ -68,10 +69,20 @@ local function GetCharSettings()
             showPrimary = true,
             showSecondary = true,
             showMinimap = true,
+            visible = true,
+            showRemaining = true,
             minimapIcon = "Trade_Engineering",
             enabledProfessions = nil,
         }
     end
+
+    if ProfessionLevelsDB[charKey].visible == nil then
+        ProfessionLevelsDB[charKey].visible = true
+    end
+    if ProfessionLevelsDB[charKey].showRemaining == nil then
+        ProfessionLevelsDB[charKey].showRemaining = true
+    end
+
     return ProfessionLevelsDB[charKey]
 end
 
@@ -90,6 +101,7 @@ local toggleSecondary
 local toggleCompact
 local toggleLock
 local toggleMinimap
+local toggleRemaining
 
 local function SavePoint(frame, key, point, relativeTo, relativePoint, xOfs, yOfs)
     EnsureSettings()
@@ -110,6 +122,59 @@ local function RestorePoint(frame, key, defaultPoint, defaultRelativeTo, default
     else
         frame:SetPoint(defaultPoint, defaultRelativeTo, defaultRelativePoint, defaultX, defaultY)
     end
+end
+
+local function ExpandHeadersForScan()
+    local collapsedHeaders = {}
+
+    for i = GetNumSkillLines(), 1, -1 do
+        local name, isHeader, isExpanded = GetSkillLineInfo(i)
+        if isHeader and not isExpanded then
+            collapsedHeaders[name] = true
+            ExpandSkillHeader(i)
+        end
+    end
+
+    return collapsedHeaders
+end
+
+local function RestoreHeadersAfterScan(collapsedHeaders)
+    if not CollapseSkillHeader then
+        return
+    end
+
+    for i = GetNumSkillLines(), 1, -1 do
+        local name, isHeader = GetSkillLineInfo(i)
+        if isHeader and collapsedHeaders[name] then
+            CollapseSkillHeader(i)
+        end
+    end
+end
+
+local function GetSessionGain(skillName, rank)
+    local startRank = sessionStartRanks[skillName]
+
+    if not startRank or rank < startRank then
+        sessionStartRanks[skillName] = rank
+        return 0
+    end
+
+    return rank - startRank
+end
+
+local function FormatValueText(skillName, rank, maxRank)
+    local valueText = rank .. "/" .. maxRank
+    local gain = GetSessionGain(skillName, rank)
+
+    if gain > 0 then
+        return valueText .. " (+" .. gain .. ")"
+    end
+
+    if settings.showRemaining and rank < maxRank then
+        return valueText .. " (" .. (maxRank - rank) .. " left)"
+    end
+
+    return valueText
 end
 
 -- =====================================================
@@ -147,7 +212,9 @@ local professionCheckboxes = {}
 local function GetAllProfessions()
     local profs = {}
     local inProfessions = false
-    
+
+    local collapsedHeaders = ExpandHeadersForScan()
+
     for i = 1, GetNumSkillLines() do
         local name, isHeader = GetSkillLineInfo(i)
         if isHeader then
@@ -162,7 +229,9 @@ local function GetAllProfessions()
             table.insert(profs, name)
         end
     end
-    
+
+    RestoreHeadersAfterScan(collapsedHeaders)
+
     local _, class = UnitClass("player")
     if class == "ROGUE" then
         table.insert(profs, "Lockpicking")
@@ -187,6 +256,9 @@ local function RefreshDisplayCheckboxes()
     end
     if toggleMinimap then
         toggleMinimap:SetChecked(settings.showMinimap)
+    end
+    if toggleRemaining then
+        toggleRemaining:SetChecked(settings.showRemaining)
     end
 end
 
@@ -246,6 +318,15 @@ local function CreateDisplayControls()
                 minimapBtn:Hide()
             end
         end
+    end)
+
+    toggleRemaining = CreateFrame("CheckButton", nil, OptionsFrame, "UICheckButtonTemplate")
+    toggleRemaining.text = toggleRemaining:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    toggleRemaining.text:SetPoint("LEFT", toggleRemaining, "RIGHT", 4, 0)
+    toggleRemaining.text:SetText("Show Remaining To Cap")
+    toggleRemaining:SetScript("OnClick", function()
+        settings.showRemaining = toggleRemaining:GetChecked() and true or false
+        UpdateProfessions()
     end)
 end
 
@@ -310,9 +391,12 @@ local function CreateProfessionCheckboxes()
     toggleMinimap:ClearAllPoints()
     toggleMinimap:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 125)
 
+    toggleRemaining:ClearAllPoints()
+    toggleRemaining:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 150)
+
     RefreshDisplayCheckboxes()
 
-    OptionsFrame:SetHeight(math.max(350, 185 - bottomCheckboxesEnd))
+    OptionsFrame:SetHeight(math.max(370, 210 - bottomCheckboxesEnd))
 end
 
 -- =====================================================
@@ -347,8 +431,10 @@ minimapBtn:SetScript("OnClick", function(self, button)
         OptionsFrame:Show()
     else
         if PL:IsVisible() then
+            settings.visible = false
             PL:Hide()
         else
+            settings.visible = true
             PL:Show()
         end
     end
@@ -534,13 +620,7 @@ function UpdateProfessions()
     local index = 1
     local contentHeight = 0
     local rowSpacing = compact and 16 or 24
-
-    for i = 1, GetNumSkillLines() do
-        local name, isHeader, isExpanded = GetSkillLineInfo(i)
-        if isHeader and not isExpanded then
-            ExpandSkillHeader(i)
-        end
-    end
+    local collapsedHeaders = ExpandHeadersForScan()
 
     for i = 1, GetNumSkillLines() do
         local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
@@ -569,7 +649,7 @@ function UpdateProfessions()
                 row:Show()
 
                 row.name:SetText(name)
-                row.value:SetText(rank.."/"..maxRank)
+                row.value:SetText(FormatValueText(name, rank, maxRank))
 
                 if not compact then
                     row.icon:SetTexture(GetSpellIcon(name))
@@ -588,7 +668,7 @@ function UpdateProfessions()
             end
         end
     end
-    
+
     local _, class = UnitClass("player")
     if class == "ROGUE" then
         for i = 1, GetNumSkillLines() do
@@ -605,7 +685,7 @@ function UpdateProfessions()
                     row:Show()
 
                     row.name:SetText(name)
-                    row.value:SetText(rank .. "/" .. maxRank)
+                    row.value:SetText(FormatValueText(name, rank, maxRank))
 
                     if not compact then
                         row.icon:SetTexture("Interface\\Icons\\INV_ThrowingKnife_04")
@@ -626,6 +706,8 @@ function UpdateProfessions()
             end
         end
     end
+
+    RestoreHeadersAfterScan(collapsedHeaders)
 
     Content:SetHeight(contentHeight)
     PL:SetHeight(contentHeight + 34)
@@ -669,12 +751,24 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         settings.showSecondary = true
         RefreshDisplayCheckboxes()
         UpdateProfessions()
+    elseif msg == "show" then
+        settings.visible = true
+        PL:Show()
+    elseif msg == "hide" then
+        settings.visible = false
+        PL:Hide()
+    elseif msg == "remaining" then
+        settings.showRemaining = not settings.showRemaining
+        RefreshDisplayCheckboxes()
+        UpdateProfessions()
     elseif msg == "reset" then
         settings.compact = false
         settings.locked = false
         settings.showPrimary = true
         settings.showSecondary = true
         settings.showMinimap = true
+        settings.visible = true
+        settings.showRemaining = true
         settings.minimapIcon = "Trade_Engineering"
         settings.enabledProfessions = nil
         settings.framePosition = nil
@@ -682,6 +776,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         RestorePoint(PL, "framePosition", "CENTER", UIParent, "CENTER", 0, 0)
         RestorePoint(minimapBtn, "minimapPosition", "TOPRIGHT", Minimap, "TOPRIGHT", -10, -10)
         minimapBtn:Show()
+        PL:Show()
         RefreshDisplayCheckboxes()
         UpdateProfessions()
     elseif msg == "config" or msg == "options" or msg == "settings" then
@@ -729,7 +824,11 @@ PL:SetScript("OnEvent", function()
         RefreshDisplayCheckboxes()
     end
     UpdateProfessions()
-    PL:Show()
+    if settings.visible then
+        PL:Show()
+    else
+        PL:Hide()
+    end
 end)
 
 PL:Hide()

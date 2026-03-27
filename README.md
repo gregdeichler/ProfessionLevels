@@ -4,11 +4,11 @@ A profession tracking addon for Turtle WoW.
 
 ## Description
 
-Profession Levels is a World of Warcraft addon designed specifically for Turtle WoW that helps you track and manage your character's profession levels efficiently.
+Profession Levels is a World of Warcraft addon designed specifically for Turtle WoW that helps you track and manage the profession levels of the character you're currently playing.
 
 ## Features
 
-- Track profession levels across your characters
+- Track profession levels on the character you're currently playing
 - Monitor profession progress in real-time
 - Per-character settings (frame position, display preferences, minimap button)
 - **Individual profession toggles** - enable/disable each profession separately via checkboxes
