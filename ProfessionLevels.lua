@@ -3,11 +3,13 @@
 -- A profession tracking addon for Turtle WoW
 -- 
 -- Features:
---   - Track profession levels across your characters
+--   - Track profession levels on the current character
 --   - Monitor profession progress in real-time
 --   - Per-character settings (position, display preferences)
 --   - Primary/Secondary profession filtering
 --   - Compact and Normal display modes
+--   - Session gains and remaining-to-cap display
+--   - Sorting and grouped sections
 --   - Minimap button for quick access
 --   - Hover highlights on rows
 --   - Enhanced progress bar styling
@@ -55,6 +57,10 @@ PL:SetBackdrop({
     insets = { left = 8, right = 8, top = 8, bottom = 8 }
 })
 
+PL.title = PL:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+PL.title:SetPoint("TOP", PL, "TOP", 0, -14)
+PL.title:SetText(playerName .. " Profession Levels")
+
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 
 local settings
@@ -71,6 +77,7 @@ local function GetCharSettings()
             showMinimap = true,
             visible = true,
             showRemaining = true,
+            sortMode = "default",
             minimapIcon = "Trade_Engineering",
             enabledProfessions = nil,
         }
@@ -81,6 +88,9 @@ local function GetCharSettings()
     end
     if ProfessionLevelsDB[charKey].showRemaining == nil then
         ProfessionLevelsDB[charKey].showRemaining = true
+    end
+    if not ProfessionLevelsDB[charKey].sortMode then
+        ProfessionLevelsDB[charKey].sortMode = "default"
     end
 
     return ProfessionLevelsDB[charKey]
@@ -102,6 +112,14 @@ local toggleCompact
 local toggleLock
 local toggleMinimap
 local toggleRemaining
+local sortButton
+local SORT_MODES = { "default", "name", "rank", "remaining" }
+local SORT_MODE_LABELS = {
+    ["default"] = "Default",
+    ["name"] = "Name",
+    ["rank"] = "Skill",
+    ["remaining"] = "Remaining",
+}
 
 local function SavePoint(frame, key, point, relativeTo, relativePoint, xOfs, yOfs)
     EnsureSettings()
@@ -175,6 +193,104 @@ local function FormatValueText(skillName, rank, maxRank)
     end
 
     return valueText
+end
+
+local function FormatCompactValueText(skillName, rank, maxRank)
+    local gain = GetSessionGain(skillName, rank)
+    if gain > 0 then
+        return rank .. " +" .. gain
+    end
+
+    if settings.showRemaining and rank < maxRank then
+        return rank .. " " .. (maxRank - rank) .. "L"
+    end
+
+    return tostring(rank)
+end
+
+local function GetProgressColor(rank, maxRank)
+    local pct = 0
+    if maxRank and maxRank > 0 then
+        pct = rank / maxRank
+    end
+
+    if rank >= maxRank then
+        return 0.35, 0.9, 0.45
+    elseif pct >= 0.75 then
+        return 1, 0.82, 0.25
+    elseif pct >= 0.4 then
+        return 0.95, 0.75, 0.3
+    else
+        return 0.82, 0.82, 0.9
+    end
+end
+
+local function GetSectionTitle(sectionKey)
+    if sectionKey == "primary" then
+        return "Primary Professions"
+    elseif sectionKey == "secondary" then
+        return "Secondary Skills"
+    elseif sectionKey == "class" then
+        return "Class Skills"
+    end
+
+    return "Professions"
+end
+
+local function GetSortModeLabel()
+    return SORT_MODE_LABELS[settings.sortMode] or "Default"
+end
+
+local function UpdateSortButtonText()
+    if sortButton then
+        sortButton:SetText("Sort: " .. GetSortModeLabel())
+    end
+end
+
+local function AdvanceSortMode()
+    local currentIndex = 1
+
+    for i = 1, table.getn(SORT_MODES) do
+        if SORT_MODES[i] == settings.sortMode then
+            currentIndex = i
+            break
+        end
+    end
+
+    currentIndex = currentIndex + 1
+    if currentIndex > table.getn(SORT_MODES) then
+        currentIndex = 1
+    end
+
+    settings.sortMode = SORT_MODES[currentIndex]
+    UpdateSortButtonText()
+    UpdateProfessions()
+end
+
+local function SortEntries(entries)
+    if settings.sortMode == "default" or table.getn(entries) < 2 then
+        return
+    end
+
+    table.sort(entries, function(a, b)
+        if settings.sortMode == "name" then
+            return a.name < b.name
+        elseif settings.sortMode == "rank" then
+            if a.rank ~= b.rank then
+                return a.rank > b.rank
+            end
+            return a.name < b.name
+        elseif settings.sortMode == "remaining" then
+            local aRemaining = a.maxRank - a.rank
+            local bRemaining = b.maxRank - b.rank
+            if aRemaining ~= bRemaining then
+                return aRemaining < bRemaining
+            end
+            return a.name < b.name
+        end
+
+        return a.name < b.name
+    end)
 end
 
 -- =====================================================
@@ -260,6 +376,7 @@ local function RefreshDisplayCheckboxes()
     if toggleRemaining then
         toggleRemaining:SetChecked(settings.showRemaining)
     end
+    UpdateSortButtonText()
 end
 
 local function CreateDisplayControls()
@@ -328,6 +445,14 @@ local function CreateDisplayControls()
         settings.showRemaining = toggleRemaining:GetChecked() and true or false
         UpdateProfessions()
     end)
+
+    sortButton = CreateFrame("Button", nil, OptionsFrame, "UIPanelButtonTemplate")
+    sortButton:SetWidth(180)
+    sortButton:SetHeight(22)
+    sortButton:SetScript("OnClick", function()
+        AdvanceSortMode()
+    end)
+    UpdateSortButtonText()
 end
 
 local function CreateProfessionCheckboxes()
@@ -394,9 +519,12 @@ local function CreateProfessionCheckboxes()
     toggleRemaining:ClearAllPoints()
     toggleRemaining:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 150)
 
+    sortButton:ClearAllPoints()
+    sortButton:SetPoint("TOPLEFT", 20, bottomCheckboxesEnd - 180)
+
     RefreshDisplayCheckboxes()
 
-    OptionsFrame:SetHeight(math.max(370, 210 - bottomCheckboxesEnd))
+    OptionsFrame:SetHeight(math.max(400, 240 - bottomCheckboxesEnd))
 end
 
 -- =====================================================
@@ -467,7 +595,7 @@ end)
 -- =====================================================
 
 local ScrollFrame = CreateFrame("ScrollFrame", nil, PL)
-ScrollFrame:SetPoint("TOPLEFT", 18, -18)
+ScrollFrame:SetPoint("TOPLEFT", 18, -34)
 ScrollFrame:SetPoint("BOTTOMRIGHT", -18, 18)
 
 local Content = CreateFrame("Frame", nil, ScrollFrame)
@@ -506,6 +634,93 @@ local function GetSpellIcon(skillName)
     return fallbackIcons[skillName] or "Interface\\Icons\\INV_Misc_Gear_01"
 end
 
+local function CollectDisplayedEntries()
+    local entries = {}
+    local grouped = {
+        primary = {},
+        secondary = {},
+        class = {},
+    }
+    local collapsedHeaders = ExpandHeadersForScan()
+    local activeSection
+
+    for i = 1, GetNumSkillLines() do
+        local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
+
+        if isHeader then
+            if name == "Professions" then
+                activeSection = "primary"
+            elseif name == "Secondary Skills" then
+                activeSection = "secondary"
+            else
+                activeSection = nil
+            end
+        elseif activeSection and rank and maxRank and maxRank > 0 then
+            local showProfession = true
+            if activeSection == "primary" and not settings.showPrimary then
+                showProfession = false
+            elseif activeSection == "secondary" and not settings.showSecondary then
+                showProfession = false
+            end
+            if settings.enabledProfessions and settings.enabledProfessions[name] == false then
+                showProfession = false
+            end
+
+            if showProfession then
+                table.insert(grouped[activeSection], {
+                    type = "skill",
+                    section = activeSection,
+                    sectionLabel = GetSectionTitle(activeSection),
+                    name = name,
+                    rank = rank,
+                    maxRank = maxRank,
+                    icon = GetSpellIcon(name),
+                })
+            end
+        end
+    end
+
+    local _, class = UnitClass("player")
+    if class == "ROGUE" then
+        for i = 1, GetNumSkillLines() do
+            local name, _, _, rank, _, _, maxRank = GetSkillLineInfo(i)
+            if name == "Lockpicking" then
+                if not settings.enabledProfessions or settings.enabledProfessions["Lockpicking"] ~= false then
+                    table.insert(grouped.class, {
+                        type = "skill",
+                        section = "class",
+                        sectionLabel = GetSectionTitle("class"),
+                        name = name,
+                        rank = rank,
+                        maxRank = maxRank,
+                        icon = "Interface\\Icons\\INV_ThrowingKnife_04",
+                    })
+                end
+                break
+            end
+        end
+    end
+
+    RestoreHeadersAfterScan(collapsedHeaders)
+
+    local sectionOrder = { "primary", "secondary", "class" }
+    for _, sectionKey in ipairs(sectionOrder) do
+        local sectionEntries = grouped[sectionKey]
+        if table.getn(sectionEntries) > 0 then
+            SortEntries(sectionEntries)
+            table.insert(entries, {
+                type = "header",
+                label = GetSectionTitle(sectionKey),
+            })
+            for _, entry in ipairs(sectionEntries) do
+                table.insert(entries, entry)
+            end
+        end
+    end
+
+    return entries
+end
+
 -- =====================================================
 -- Row Creation
 -- =====================================================
@@ -516,16 +731,42 @@ local function CreateRow(index)
     return row
 end
 
-local function SetupRowLayout(row, index)
+local function ShowSkillTooltip(row)
+    local entry = row.entry
+    if not entry or entry.type ~= "skill" then
+        return
+    end
 
+    local gain = GetSessionGain(entry.name, entry.rank)
+    local remaining = entry.maxRank - entry.rank
+
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+    GameTooltip:SetText(entry.name)
+    GameTooltip:AddLine(entry.sectionLabel, 1, 0.82, 0.25)
+    GameTooltip:AddLine("Current: " .. entry.rank .. "/" .. entry.maxRank, 1, 1, 1)
+    if gain > 0 then
+        GameTooltip:AddLine("Session Gain: +" .. gain, 0.4, 1, 0.4)
+    else
+        GameTooltip:AddLine("Session Gain: +0", 0.75, 0.75, 0.75)
+    end
+    if remaining > 0 then
+        GameTooltip:AddLine("Remaining: " .. remaining, 1, 0.9, 0.45)
+    else
+        GameTooltip:AddLine("Status: Maxed", 0.4, 1, 0.4)
+    end
+    GameTooltip:Show()
+end
+
+local function SetupRowLayout(row, index, entry, yOffset)
     local compact = settings.compact
-    local rowHeight = compact and 13 or 21
+    local rowHeight = compact and 15 or 21
+    local headerHeight = compact and 12 or 16
     local barHeight = compact and 0 or 12
     local font = compact and "GameFontHighlightSmall" or "GameFontNormal"
 
-    row:SetHeight(rowHeight)
+    row.entry = entry
     row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", 6, -((index - 1) * (rowHeight + 3)))
+    row:SetPoint("TOPLEFT", 6, -yOffset)
     row:SetPoint("RIGHT", Content, "RIGHT", -6, 0)
 
     if not row.highlight then
@@ -535,13 +776,10 @@ local function SetupRowLayout(row, index)
         row.highlight:Hide()
     end
 
-    row:EnableMouse(true)
-    row:SetScript("OnEnter", function()
-        row.highlight:Show()
-    end)
-    row:SetScript("OnLeave", function()
-        row.highlight:Hide()
-    end)
+    if not row.separator then
+        row.separator = row:CreateTexture(nil, "BACKGROUND")
+        row.separator:SetTexture(0.85, 0.7, 0.2, 0.16)
+    end
 
     if not row.icon then
         row.icon = row:CreateTexture(nil, "ARTWORK")
@@ -558,28 +796,64 @@ local function SetupRowLayout(row, index)
     if not row.bar then
         row.bar = CreateFrame("StatusBar", nil, row)
         row.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        
+
         row.bar.bg = row.bar:CreateTexture(nil, "BACKGROUND")
         row.bar.bg:SetAllPoints()
         row.bar.bg:SetTexture(0, 0, 0, 0.2)
     end
 
+    if entry.type == "header" then
+        row:SetHeight(headerHeight)
+        row.highlight:Hide()
+        row.separator:Show()
+        row.separator:ClearAllPoints()
+        row.separator:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -1)
+        row.separator:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 1)
+        row.icon:Hide()
+        row.bar:Hide()
+        row.value:SetText("")
+        row.name:SetFontObject("GameFontNormalSmall")
+        row.name:SetTextColor(1, 0.82, 0.25)
+        row.name:ClearAllPoints()
+        row.name:SetPoint("LEFT", row, "LEFT", 2, 0)
+        row:EnableMouse(false)
+        row:SetScript("OnEnter", nil)
+        row:SetScript("OnLeave", nil)
+        return
+    end
+
+    row:SetHeight(rowHeight)
+    row.separator:Hide()
+    row:EnableMouse(true)
+    row:SetScript("OnEnter", function()
+        row.highlight:Show()
+        ShowSkillTooltip(row)
+    end)
+    row:SetScript("OnLeave", function()
+        row.highlight:Hide()
+        GameTooltip:Hide()
+    end)
+
     row.name:SetFontObject(font)
 
     if compact then
-        row.icon:Hide()
+        row.icon:SetWidth(12)
+        row.icon:SetHeight(12)
+        row.icon:ClearAllPoints()
+        row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
+        row.icon:Show()
         row.bar:Hide()
 
         row.name:ClearAllPoints()
-        row.name:SetPoint("LEFT", row, "LEFT", 3, 0)
+        row.name:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
 
         row.value:ClearAllPoints()
-        row.value:SetPoint("RIGHT", row, "RIGHT", -3, 0)
-
+        row.value:SetPoint("RIGHT", row, "RIGHT", -2, 0)
     else
         row.icon:SetWidth(14)
         row.icon:SetHeight(14)
-        row.icon:SetPoint("LEFT", 2, 0)
+        row.icon:ClearAllPoints()
+        row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
         row.icon:Show()
 
         row.name:ClearAllPoints()
@@ -616,101 +890,46 @@ function UpdateProfessions()
 
     PL:SetWidth(width)
     Content:SetWidth(width - 36)
+    PL.title:SetText(playerName .. " Profession Levels")
 
+    local entries = CollectDisplayedEntries()
     local index = 1
-    local contentHeight = 0
-    local rowSpacing = compact and 16 or 24
-    local collapsedHeaders = ExpandHeadersForScan()
+    local yOffset = 0
 
-    for i = 1, GetNumSkillLines() do
-        local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
+    for _, entry in ipairs(entries) do
+        local row = PL.rows[index] or CreateRow(index)
+        SetupRowLayout(row, index, entry, yOffset)
+        row:Show()
 
-        if isHeader then
-            if name == "Professions" or name == "Secondary Skills" then
-                PL.currentSection = name
+        if entry.type == "header" then
+            row.name:SetText(entry.label)
+            yOffset = yOffset + row:GetHeight() + 4
+        else
+            local red, green, blue = GetProgressColor(entry.rank, entry.maxRank)
+
+            row.icon:SetTexture(entry.icon)
+            row.name:SetText(entry.name)
+            row.name:SetTextColor(red, green, blue)
+            row.value:SetTextColor(red, green, blue)
+
+            if compact then
+                row.value:SetText(FormatCompactValueText(entry.name, entry.rank, entry.maxRank))
+                row.bar:Hide()
             else
-                PL.currentSection = nil
+                row.value:SetText(FormatValueText(entry.name, entry.rank, entry.maxRank))
+                row.bar:SetMinMaxValues(0, entry.maxRank)
+                row.bar:SetValue(entry.rank)
+                row.bar:SetStatusBarColor(red, green, blue)
             end
 
-        elseif PL.currentSection and rank and maxRank and maxRank > 0 then
-            local showProfession = true
-            if PL.currentSection == "Professions" and not settings.showPrimary then
-                showProfession = false
-            elseif PL.currentSection == "Secondary Skills" and not settings.showSecondary then
-                showProfession = false
-            end
-            if settings.enabledProfessions and settings.enabledProfessions[name] == false then
-                showProfession = false
-            end
-            
-            if showProfession then
-                local row = PL.rows[index] or CreateRow(index)
-                SetupRowLayout(row, index)
-                row:Show()
-
-                row.name:SetText(name)
-                row.value:SetText(FormatValueText(name, rank, maxRank))
-
-                if not compact then
-                    row.icon:SetTexture(GetSpellIcon(name))
-                    row.bar:SetMinMaxValues(0, maxRank)
-                    row.bar:SetValue(rank)
-
-                    if rank == maxRank then
-                        row.bar:SetStatusBarColor(0.2, 0.75, 0.2)
-                    else
-                        row.bar:SetStatusBarColor(0.85, 0.65, 0.13)
-                    end
-                end
-
-                index = index + 1
-                contentHeight = contentHeight + rowSpacing
-            end
+            yOffset = yOffset + row:GetHeight() + (compact and 4 or 6)
         end
+
+        index = index + 1
     end
 
-    local _, class = UnitClass("player")
-    if class == "ROGUE" then
-        for i = 1, GetNumSkillLines() do
-            local name, _, _, rank, _, _, maxRank = GetSkillLineInfo(i)
-            if name == "Lockpicking" then
-                local showLockpicking = true
-                if settings.enabledProfessions and settings.enabledProfessions["Lockpicking"] == false then
-                    showLockpicking = false
-                end
-                
-                if showLockpicking then
-                    local row = PL.rows[index] or CreateRow(index)
-                    SetupRowLayout(row, index)
-                    row:Show()
-
-                    row.name:SetText(name)
-                    row.value:SetText(FormatValueText(name, rank, maxRank))
-
-                    if not compact then
-                        row.icon:SetTexture("Interface\\Icons\\INV_ThrowingKnife_04")
-                        row.bar:SetMinMaxValues(0, maxRank)
-                        row.bar:SetValue(rank)
-
-                        if rank == maxRank then
-                            row.bar:SetStatusBarColor(0.2, 0.75, 0.2)
-                        else
-                            row.bar:SetStatusBarColor(0.85, 0.65, 0.13)
-                        end
-                    end
-
-                    index = index + 1
-                    contentHeight = contentHeight + rowSpacing
-                end
-                break
-            end
-        end
-    end
-
-    RestoreHeadersAfterScan(collapsedHeaders)
-
-    Content:SetHeight(contentHeight)
-    PL:SetHeight(contentHeight + 34)
+    Content:SetHeight(yOffset)
+    PL:SetHeight(math.max(90, yOffset + 54))
 end
 
 -- =====================================================
@@ -723,45 +942,56 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
     EnsureSettings()
 
     local msg = string.lower(arg or "")
+    local command, value = string.match(msg, "^(%S+)%s*(.-)$")
+    command = command or ""
+    value = value or ""
 
-    if msg == "compact" then
+    if command == "compact" then
         settings.compact = true
         UpdateProfessions()
-    elseif msg == "normal" then
+    elseif command == "normal" then
         settings.compact = false
         UpdateProfessions()
-    elseif msg == "lock" then
+    elseif command == "lock" then
         settings.locked = true
         RefreshDisplayCheckboxes()
-    elseif msg == "unlock" then
+    elseif command == "unlock" then
         settings.locked = false
         RefreshDisplayCheckboxes()
-    elseif msg == "primary" then
+    elseif command == "primary" then
         settings.showPrimary = true
         settings.showSecondary = false
         RefreshDisplayCheckboxes()
         UpdateProfessions()
-    elseif msg == "secondary" then
+    elseif command == "secondary" then
         settings.showPrimary = false
         settings.showSecondary = true
         RefreshDisplayCheckboxes()
         UpdateProfessions()
-    elseif msg == "both" then
+    elseif command == "both" then
         settings.showPrimary = true
         settings.showSecondary = true
         RefreshDisplayCheckboxes()
         UpdateProfessions()
-    elseif msg == "show" then
+    elseif command == "show" then
         settings.visible = true
         PL:Show()
-    elseif msg == "hide" then
+    elseif command == "hide" then
         settings.visible = false
         PL:Hide()
-    elseif msg == "remaining" then
+    elseif command == "remaining" then
         settings.showRemaining = not settings.showRemaining
         RefreshDisplayCheckboxes()
         UpdateProfessions()
-    elseif msg == "reset" then
+    elseif command == "sort" then
+        if value == "default" or value == "name" or value == "rank" or value == "remaining" then
+            settings.sortMode = value
+            RefreshDisplayCheckboxes()
+            UpdateProfessions()
+        else
+            print("/pl sort default | name | rank | remaining")
+        end
+    elseif command == "reset" then
         settings.compact = false
         settings.locked = false
         settings.showPrimary = true
@@ -769,6 +999,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         settings.showMinimap = true
         settings.visible = true
         settings.showRemaining = true
+        settings.sortMode = "default"
         settings.minimapIcon = "Trade_Engineering"
         settings.enabledProfessions = nil
         settings.framePosition = nil
@@ -779,7 +1010,7 @@ SlashCmdList["PROFESSIONLEVELS"] = function(arg)
         PL:Show()
         RefreshDisplayCheckboxes()
         UpdateProfessions()
-    elseif msg == "config" or msg == "options" or msg == "settings" then
+    elseif command == "config" or command == "options" or command == "settings" then
         CreateProfessionCheckboxes()
         OptionsFrame:Show()
     end

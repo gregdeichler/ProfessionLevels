@@ -1,31 +1,47 @@
 # Profession Levels
 
-A profession tracking addon for Turtle WoW.
+## 🌿 A colorful profession tracker for Turtle WoW
 
-## Description
+<p>
+  <span style="color:#f5c542;"><strong>Profession Levels</strong></span> is a lightweight Turtle WoW addon that helps you track the professions of the
+  <strong>character you're currently playing</strong> with cleaner visuals, smarter display options, and quick access settings.
+</p>
 
-Profession Levels is a World of Warcraft addon designed specifically for Turtle WoW that helps you track and manage the profession levels of the character you're currently playing.
+---
 
-## Features
+## ✨ Highlights
 
-- Track profession levels on the character you're currently playing
-- Monitor profession progress in real-time
-- Per-character settings (frame position, display preferences, minimap button)
-- **Individual profession toggles** - enable/disable each profession separately via checkboxes
-- Primary and secondary profession filtering from both slash commands and the settings panel
-- Compact and Normal display modes
-- Minimap button for quick access
-- Hover highlights on rows
-- Enhanced progress bar styling with vibrant colors
-- Movable and lockable frame
-- Preferences menu for easy configuration
-- Lockpicking support for Rogues
+- 🎯 Track profession levels on your current character
+- 📈 See real-time progress while you level professions
+- 🔥 Show session gains like `225/300 (+7)`
+- 🧮 Show remaining points to cap like `225/300 (75 left)`
+- 🗂️ Group rows into `Primary`, `Secondary`, and `Class Skills`
+- 🔀 Sort by default order, name, skill, or remaining points
+- 🎨 Use progress-based color tiers for easier scanning
+- 🪶 Switch between normal and compact layouts
+- 🧭 Save frame position, visibility, sort mode, and display settings per character
+- 🛠️ Toggle individual professions on or off in the settings panel
+- 🗡️ Includes Rogue lockpicking support
+- 📍 Minimap button for quick access
 
-## Commands
+---
 
-| Command | Description |
-|---------|-------------|
-| `/pl config` | Open preferences menu |
+## 🖼️ What It Looks Like
+
+The addon is designed to feel clean, readable, and a little more lively than the default skill list:
+
+- Gold-tinted section headers separate profession groups
+- Progress colors make low, mid, near-cap, and maxed skills easier to read
+- Hovering a row shows a tooltip with current rank, session gain, and remaining points
+- Compact mode keeps the footprint small while still showing useful values
+
+---
+
+## 🎮 Commands
+
+| Command | What it does |
+|---------|---------------|
+| `/pl config` | Open the settings window |
 | `/pl compact` | Switch to compact mode |
 | `/pl normal` | Switch to normal mode |
 | `/pl lock` | Lock frame position |
@@ -33,48 +49,102 @@ Profession Levels is a World of Warcraft addon designed specifically for Turtle 
 | `/pl primary` | Show only primary professions |
 | `/pl secondary` | Show only secondary skills |
 | `/pl both` | Show both profession groups |
+| `/pl show` | Show the frame |
+| `/pl hide` | Hide the frame |
+| `/pl remaining` | Toggle remaining-to-cap text |
+| `/pl sort default` | Sort by in-game/default order |
+| `/pl sort name` | Sort alphabetically |
+| `/pl sort rank` | Sort by highest skill |
+| `/pl sort remaining` | Sort by fewest points left to cap |
 | `/pl reset` | Reset all settings |
 
-## Minimap Button
+---
 
-- **Click** - Toggle main frame visibility
-- **Shift+Click** - Open settings
-- **Drag** - Reposition button and keep the new location
+## 🧰 Minimap Button
 
-## Installation
+- 👆 **Click** - Toggle the main frame
+- ⇧ **Shift+Click** - Open settings
+- 🖱️ **Drag** - Reposition the minimap button
 
-1. Clone or download this repository
-2. Place the `ProfessionLevels` folder in your World of Warcraft `Addons` directory:
-   - `World of Warcraft\_classic_\Interface\AddOns\`
-3. Restart World of Warcraft or reload the UI (`/reload`)
+---
 
-## Usage
+## 🚀 Installation
 
-Once installed and enabled:
-1. The addon will automatically load when you start the game
-2. Use the minimap button or `/pl config` to access settings
-3. Drag the frame or minimap button to reposition them
-4. Monitor your profession levels as you level them up
-5. Use the checkboxes in preferences to show/hide specific professions
+1. Clone or download this repository.
+2. Place the `ProfessionLevels` folder in your World of Warcraft `AddOns` directory.
+   - `World of Warcraft\Interface\AddOns\`
+3. Restart World of Warcraft or reload the UI with `/reload`.
 
-## Files
+---
+
+## 🧪 Usage
+
+Once installed:
+
+1. Log into a character on Turtle WoW.
+2. Open the frame with the minimap button or `/pl show`.
+3. Use `/pl config` to adjust display options.
+4. Pick a sort mode if you want a different view of your skills.
+5. Hover rows for extra detail while you level.
+
+---
+
+## 🧱 Features In Detail
+
+### 🎯 Smart Progress Display
+
+- Shows current rank and cap
+- Shows session gains when you've made progress this login
+- Shows remaining points to cap when there are no session gains to display
+
+### 🗂️ Better Organization
+
+- Separates professions into clear section headers
+- Supports individual profession toggles
+- Supports primary-only, secondary-only, or combined views
+
+### 🪶 Flexible Layout
+
+- Normal mode for full bars and detailed values
+- Compact mode for a tighter footprint
+- Saved visibility and frame position per character
+
+### 🧠 Helpful Extras
+
+- Tooltips with current rank, session gain, and remaining points
+- Progress-based text and bar coloring
+- Rogue lockpicking support
+
+---
+
+## 📁 Files
 
 - `ProfessionLevels.lua` - Main addon code
-- `ProfessionLevels.toc` - Addon table of contents configuration file
+- `ProfessionLevels.toc` - Addon table of contents file
+- `README.md` - Documentation
 
-## Requirements
+---
 
-- Turtle WoW private server
-- World of Warcraft client (1.12.x - compatible with Turtle WoW)
+## ✅ Requirements
 
-## Contributing
+- 🐢 Turtle WoW
+- 💿 World of Warcraft client `1.12.x`
 
-Feel free to submit issues and enhancement requests!
+---
 
-## License
+## 💬 Contributing
+
+Ideas, tweaks, and quality-of-life improvements are welcome.
+
+---
+
+## 📜 License
 
 This project is open source and available under the MIT License.
 
 ---
 
-**Author:** [gregdeichler](https://github.com/gregdeichler)
+## 👤 Author
+
+**gregdeichler**  
+[GitHub Profile](https://github.com/gregdeichler)
