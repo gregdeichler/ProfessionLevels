@@ -894,7 +894,12 @@ function UpdateProfessions()
     Content:SetWidth(width - 36)
     PL.title:SetText(playerName .. " Profession Levels")
     PL.title:SetWidth(width - 36)
-    PL.title:SetFontObject(compact and "GameFontNormalSmall" or "GameFontNormal")
+    PL.title:SetFontObject("GameFontNormal")
+    if compact then
+        PL.title:Hide()
+    else
+        PL.title:Show()
+    end
 
     local entries = CollectDisplayedEntries()
     local index = 1
