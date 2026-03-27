@@ -33,8 +33,8 @@
 -- Author: gregdeichler
 -- =====================================================
 
-local NORMAL_WIDTH = 300
-local COMPACT_WIDTH = 190
+local NORMAL_WIDTH = 240
+local COMPACT_WIDTH = 152
 
 local playerName = UnitName("player")
 local realmName = GetRealmName()
@@ -759,9 +759,9 @@ end
 
 local function SetupRowLayout(row, index, entry, yOffset)
     local compact = settings.compact
-    local rowHeight = compact and 15 or 21
-    local headerHeight = compact and 12 or 16
-    local barHeight = compact and 0 or 12
+    local rowHeight = compact and 12 or 17
+    local headerHeight = compact and 10 or 13
+    local barHeight = compact and 0 or 9
     local font = compact and "GameFontHighlightSmall" or "GameFontNormal"
 
     row.entry = entry
@@ -837,8 +837,8 @@ local function SetupRowLayout(row, index, entry, yOffset)
     row.name:SetFontObject(font)
 
     if compact then
-        row.icon:SetWidth(12)
-        row.icon:SetHeight(12)
+        row.icon:SetWidth(10)
+        row.icon:SetHeight(10)
         row.icon:ClearAllPoints()
         row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
         row.icon:Show()
@@ -850,8 +850,8 @@ local function SetupRowLayout(row, index, entry, yOffset)
         row.value:ClearAllPoints()
         row.value:SetPoint("RIGHT", row, "RIGHT", -2, 0)
     else
-        row.icon:SetWidth(14)
-        row.icon:SetHeight(14)
+        row.icon:SetWidth(11)
+        row.icon:SetHeight(11)
         row.icon:ClearAllPoints()
         row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
         row.icon:Show()
@@ -903,7 +903,7 @@ function UpdateProfessions()
 
         if entry.type == "header" then
             row.name:SetText(entry.label)
-            yOffset = yOffset + row:GetHeight() + 4
+            yOffset = yOffset + row:GetHeight() + 3
         else
             local red, green, blue = GetProgressColor(entry.rank, entry.maxRank)
 
@@ -922,7 +922,7 @@ function UpdateProfessions()
                 row.bar:SetStatusBarColor(red, green, blue)
             end
 
-            yOffset = yOffset + row:GetHeight() + (compact and 4 or 6)
+            yOffset = yOffset + row:GetHeight() + (compact and 3 or 4)
         end
 
         index = index + 1
