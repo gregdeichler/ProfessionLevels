@@ -60,6 +60,8 @@ PL:SetBackdrop({
 PL.title = PL:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 PL.title:SetPoint("TOP", PL, "TOP", 0, -14)
 PL.title:SetText(playerName .. " Profession Levels")
+PL.title:SetWidth(NORMAL_WIDTH - 36)
+PL.title:SetJustifyH("CENTER")
 
 ProfessionLevelsDB = ProfessionLevelsDB or {}
 
@@ -891,6 +893,8 @@ function UpdateProfessions()
     PL:SetWidth(width)
     Content:SetWidth(width - 36)
     PL.title:SetText(playerName .. " Profession Levels")
+    PL.title:SetWidth(width - 36)
+    PL.title:SetFontObject(compact and "GameFontNormalSmall" or "GameFontNormal")
 
     local entries = CollectDisplayedEntries()
     local index = 1
