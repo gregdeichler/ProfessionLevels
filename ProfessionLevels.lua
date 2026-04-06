@@ -34,7 +34,7 @@
 -- =====================================================
 
 local NORMAL_WIDTH = 240
-local COMPACT_WIDTH = 152
+local COMPACT_WIDTH = 176
 
 local playerName = UnitName("player")
 local realmName = GetRealmName()
@@ -851,6 +851,9 @@ local function SetupRowLayout(row, index, entry, yOffset)
 
         row.value:ClearAllPoints()
         row.value:SetPoint("RIGHT", row, "RIGHT", -2, 0)
+
+        row.name:SetWidth(0)
+        row.name:SetPoint("RIGHT", row.value, "LEFT", -6, 0)
     else
         row.icon:SetWidth(11)
         row.icon:SetHeight(11)
@@ -863,6 +866,9 @@ local function SetupRowLayout(row, index, entry, yOffset)
 
         row.value:ClearAllPoints()
         row.value:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+
+        row.name:SetWidth(0)
+        row.name:SetPoint("RIGHT", row.value, "LEFT", -44, 0)
 
         row.bar:SetHeight(barHeight)
         row.bar:ClearAllPoints()
